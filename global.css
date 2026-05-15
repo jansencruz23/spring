@@ -1,0 +1,58 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --coral: 239 168 144;
+    --coral-deep: 216 134 106;
+    --coral-soft: 252 229 217;
+    --coral-whisper: 251 241 234;
+
+    --sage: 155 184 154;
+    --sage-deep: 110 142 115;
+    --sage-soft: 227 236 223;
+
+    --butter: 244 210 122;
+    --butter-deep: 217 178 87;
+    --butter-soft: 250 239 203;
+
+    --cream: 251 247 241;
+    --ivory: 244 238 229;
+    --sand: 232 223 210;
+    --stone: 184 172 156;
+    --bark: 92 77 63;
+    --espresso: 58 46 37;
+    --ink-soft: 122 107 92;
+
+    --success: 122 159 110;
+    --danger: 201 122 106;
+  }
+
+  .dark:root,
+  :root.dark {
+    --coral: 232 160 136;
+    --coral-deep: 240 182 158;
+    --coral-soft: 61 42 34;
+    --coral-whisper: 42 30 24;
+
+    --sage: 168 196 166;
+    --sage-deep: 185 211 184;
+    --sage-soft: 42 53 40;
+
+    --butter: 232 198 116;
+    --butter-deep: 242 213 137;
+    --butter-soft: 58 47 28;
+
+    --cream: 31 24 20;
+    --ivory: 42 32 23;
+    --sand: 58 45 34;
+    --stone: 133 118 104;
+    --bark: 232 221 208;
+    --espresso: 251 247 241;
+    --ink-soft: 184 168 154;
+
+    --success: 155 188 142;
+    --danger: 224 144 128;
+  }
+}

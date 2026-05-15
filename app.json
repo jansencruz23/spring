@@ -1,0 +1,40 @@
+{
+  "expo": {
+    "name": "Spring",
+    "slug": "spring",
+    "scheme": "spring",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "automatic",
+    "newArchEnabled": true,
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "com.spring.app"
+    },
+    "android": {
+      "package": "com.spring.app"
+    },
+    "plugins": [
+      "expo-router",
+      "expo-font",
+      [
+        "expo-splash-screen",
+        {
+          "backgroundColor": "#FBF7F1",
+          "dark": {
+            "backgroundColor": "#1F1814"
+          }
+        }
+      ],
+      "expo-asset"
+    ],
+    "experiments": {
+      "typedRoutes": true
+    },
+    "extra": {
+      "router": {
+        "origin": false
+      }
+    }
+  }
+}
