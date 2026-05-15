@@ -18,12 +18,13 @@ the commands to wire them up.
 
 ## Stack
 
-- Expo SDK 52 (New Architecture on), Expo Router (file-based)
+- Expo SDK 54 (New Architecture on), Expo Router 6 (file-based)
+- React 19.1 + React Native 0.81
 - NativeWind v4 (Tailwind on RN)
 - Zustand (client state), TanStack Query + MMKV (server cache)
 - Supabase (Postgres + Auth + Storage + Edge Functions)
 - NVIDIA NIM via OpenAI-compatible endpoint inside an Edge Function (M4)
-- Reanimated v3, Gesture Handler, react-native-svg, lucide-react-native
+- Reanimated v4 (worklets package), Gesture Handler, react-native-svg, lucide-react-native
 - Fonts: Fraunces (display) + Plus Jakarta Sans (body)
 
 ## Scripts
