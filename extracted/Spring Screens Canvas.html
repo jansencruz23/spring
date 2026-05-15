@@ -1,0 +1,246 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Spring — all screens</title>
+<style>
+  html, body { margin: 0; padding: 0; height: 100%; overflow: hidden; font-family: 'Plus Jakarta Sans', system-ui, sans-serif; }
+</style>
+</head>
+<body>
+  <div id="root" style="width:100vw;height:100vh"></div>
+
+  <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+
+  <script type="text/babel" src="design-canvas.jsx"></script>
+  <script type="text/babel" src="spring-tokens.jsx"></script>
+  <script type="text/babel" src="spring-shell.jsx"></script>
+  <script type="text/babel" src="spring-onboarding.jsx"></script>
+  <script type="text/babel" src="spring-home.jsx"></script>
+  <script type="text/babel" src="spring-chat.jsx"></script>
+  <script type="text/babel" src="spring-meals.jsx"></script>
+
+  <script type="text/babel">
+    function Phone({ children, mode = 'light', primary }) {
+      const palette = React.useMemo(() => {
+        const opts = {
+          'soft-peach': { coral: '#EFA890', coralDeep: '#D8866A', coralSoft: '#FCE5D9' },
+          'warm-coral': { coral: '#EC8970', coralDeep: '#C76A50', coralSoft: '#FBDFD2' },
+        };
+        return resolveSpringPalette(mode, mode === 'light' ? opts[primary || 'soft-peach'] : null);
+      }, [mode, primary]);
+      return (
+        <div className="spring-app" style={{ width: 390, height: 844, display: 'flex' }}>
+          <SpringPhone palette={palette} mode={mode} width={390} height={844}>
+            <SpringStatusBar palette={palette} mode={mode}/>
+            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', position: 'relative' }}>
+              {typeof children === 'function' ? children(palette, mode) : children}
+            </div>
+            <SpringHomeIndicator palette={palette} mode={mode}/>
+          </SpringPhone>
+        </div>
+      );
+    }
+
+    function PhoneWithNav({ active = 'home', children, mode = 'light' }) {
+      const palette = React.useMemo(() => resolveSpringPalette(mode, mode === 'light' ? { coral: '#EFA890', coralDeep: '#D8866A', coralSoft: '#FCE5D9' } : null), [mode]);
+      return (
+        <div className="spring-app" style={{ width: 390, height: 844, display: 'flex' }}>
+          <SpringPhone palette={palette} mode={mode} width={390} height={844}>
+            <SpringStatusBar palette={palette} mode={mode}/>
+            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', position: 'relative' }}>
+              {typeof children === 'function' ? children(palette, mode) : children}
+              <AskSpringFab palette={palette} mode={mode} bottom={20}/>
+            </div>
+            <SpringBottomNav palette={palette} mode={mode} active={active}/>
+            <SpringHomeIndicator palette={palette} mode={mode}/>
+          </SpringPhone>
+        </div>
+      );
+    }
+
+    function App() {
+      return (
+        <DesignCanvas projectName="Spring · Holistic wellness companion">
+          <DCSection id="onboarding" title="Onboarding" subtitle="A warm, conversational first-run">
+            <DCArtboard id="onb-welcome" label="Welcome" width={390} height={844}>
+              <Phone>{(palette, mode) => <OnboardingScreen palette={palette} mode={mode} step={0} data={{}} onNext={()=>{}} onBack={()=>{}}/>}</Phone>
+            </DCArtboard>
+            <DCArtboard id="onb-name" label="Step 1 · Name" width={390} height={844}>
+              <Phone>{(palette, mode) => <OnboardingScreen palette={palette} mode={mode} step={1} data={{ name: 'Maya' }} onChange={()=>{}} onNext={()=>{}} onBack={()=>{}}/>}</Phone>
+            </DCArtboard>
+            <DCArtboard id="onb-goal" label="Step 2 · Goal" width={390} height={844}>
+              <Phone>{(palette, mode) => <OnboardingScreen palette={palette} mode={mode} step={2} data={{ goal: 'feel-good' }} onChange={()=>{}} onNext={()=>{}} onBack={()=>{}}/>}</Phone>
+            </DCArtboard>
+            <DCArtboard id="onb-rhythm" label="Step 3 · Rhythm" width={390} height={844}>
+              <Phone>{(palette, mode) => <OnboardingScreen palette={palette} mode={mode} step={3} data={{}} onChange={()=>{}} onNext={()=>{}} onBack={()=>{}}/>}</Phone>
+            </DCArtboard>
+            <DCArtboard id="onb-summary" label="Summary" width={390} height={844}>
+              <Phone>{(palette, mode) => <OnboardingScreen palette={palette} mode={mode} step={4} data={{ name: 'Maya' }} onChange={()=>{}} onFinish={()=>{}}/>}</Phone>
+            </DCArtboard>
+          </DCSection>
+
+          <DCSection id="home" title="Home / Today" subtitle="The calm dashboard — light + dark">
+            <DCArtboard id="home-light" label="Today · Light" width={390} height={844}>
+              <PhoneWithNav active="home" mode="light">{(palette, mode) => <HomeScreen palette={palette} mode={mode} openContext={()=>{}}/>}</PhoneWithNav>
+            </DCArtboard>
+            <DCArtboard id="home-dark" label="Today · Dark" width={390} height={844}>
+              <PhoneWithNav active="home" mode="dark">{(palette, mode) => <HomeScreen palette={palette} mode={mode} openContext={()=>{}}/>}</PhoneWithNav>
+            </DCArtboard>
+          </DCSection>
+
+          <DCSection id="ai" title="Ask Spring" subtitle="The native AI assistant — light + dark">
+            <DCArtboard id="chat-light" label="Chat · Light" width={390} height={844}>
+              <Phone mode="light">{(palette, mode) => <ChatScreen palette={palette} mode={mode}/>}</Phone>
+            </DCArtboard>
+            <DCArtboard id="chat-dark" label="Chat · Dark" width={390} height={844}>
+              <Phone mode="dark">{(palette, mode) => <ChatScreen palette={palette} mode={mode}/>}</Phone>
+            </DCArtboard>
+          </DCSection>
+
+          <DCSection id="meals" title="Meal plan" subtitle="Weekly rhythm with swap-in alternatives">
+            <DCArtboard id="meals-week" label="Weekly plan" width={390} height={844}>
+              <PhoneWithNav active="meals">{(palette, mode) => <MealPlanScreen palette={palette} mode={mode} openContext={()=>{}}/>}</PhoneWithNav>
+            </DCArtboard>
+          </DCSection>
+
+          <DCSection id="train" title="Train" subtitle="Active workout — guided session">
+            <DCArtboard id="workout" label="Active workout" width={390} height={844}>
+              <PhoneWithNav active="train">{(palette, mode) => <ActiveWorkoutScreen palette={palette} mode={mode}/>}</PhoneWithNav>
+            </DCArtboard>
+          </DCSection>
+
+          <DCSection id="ds" title="Design system" subtitle="Color, type, components">
+            <DCArtboard id="ds-color" label="Palette" width={520} height={520}>
+              <ColorSheet/>
+            </DCArtboard>
+            <DCArtboard id="ds-type" label="Typography" width={520} height={520}>
+              <TypeSheet/>
+            </DCArtboard>
+            <DCArtboard id="ds-components" label="Components" width={520} height={680}>
+              <ComponentSheet/>
+            </DCArtboard>
+          </DCSection>
+        </DesignCanvas>
+      );
+    }
+
+    function ColorSheet() {
+      const p = resolveSpringPalette('light', { coral: '#EFA890', coralDeep: '#D8866A', coralSoft: '#FCE5D9' });
+      const groups = [
+        { name: 'Primary · coral', swatches: [['Coral', p.coral],['Coral deep', p.coralDeep],['Coral soft', p.coralSoft],['Whisper', p.coralWhisper]] },
+        { name: 'Secondary · sage', swatches: [['Sage', p.sage],['Sage deep', p.sageDeep],['Sage soft', p.sageSoft]] },
+        { name: 'Accent · butter', swatches: [['Butter', p.butter],['Butter deep', p.butterDeep],['Butter soft', p.butterSoft]] },
+        { name: 'Neutrals · warm', swatches: [['Cream', p.cream],['Ivory', p.ivory],['Sand', p.sand],['Stone', p.stone],['Bark', p.bark],['Espresso', p.espresso]] },
+      ];
+      return (
+        <div style={{ background: p.cream, height: '100%', padding: 28, fontFamily: SPRING_TYPE.sans, color: p.espresso, overflow: 'auto' }}>
+          <div style={{ fontFamily: SPRING_TYPE.display, fontSize: 22, fontWeight: 500, marginBottom: 4 }}>Warm by design</div>
+          <div style={{ fontSize: 12, color: p.inkSoft, marginBottom: 18 }}>Never pure black, never cold gray.</div>
+          {groups.map(g => (
+            <div key={g.name} style={{ marginBottom: 18 }}>
+              <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: 0.6, textTransform: 'uppercase', color: p.stone, marginBottom: 8 }}>{g.name}</div>
+              <div style={{ display: 'flex', gap: 8 }}>
+                {g.swatches.map(([n, c]) => (
+                  <div key={n} style={{ flex: 1 }}>
+                    <div style={{ height: 56, borderRadius: 12, background: c, border: `1px solid ${p.sand}` }}/>
+                    <div style={{ fontSize: 10, fontWeight: 600, marginTop: 5 }}>{n}</div>
+                    <div style={{ fontSize: 9, color: p.inkSoft, fontFamily: 'ui-monospace, Menlo, monospace' }}>{c}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+      );
+    }
+
+    function TypeSheet() {
+      const p = resolveSpringPalette('light');
+      return (
+        <div style={{ background: p.cream, height: '100%', padding: 28, fontFamily: SPRING_TYPE.sans, color: p.espresso, overflow: 'auto' }}>
+          <div style={{ fontFamily: SPRING_TYPE.display, fontSize: 22, fontWeight: 500, marginBottom: 18 }}>Type</div>
+          <div style={{ marginBottom: 22 }}>
+            <div style={{ fontSize: 10, color: p.stone, fontWeight: 700, letterSpacing: 0.6, textTransform: 'uppercase' }}>Display · Fraunces</div>
+            <div style={{ fontFamily: SPRING_TYPE.display, fontSize: 44, fontWeight: 500, letterSpacing: -0.6, lineHeight: 1.05, marginTop: 4 }}>
+              Good morning, <em style={{ fontStyle: 'italic', color: p.coralDeep }}>Maya.</em>
+            </div>
+            <div style={{ fontFamily: SPRING_TYPE.display, fontSize: 26, fontWeight: 500, marginTop: 8 }}>Strong & steady lower body</div>
+            <div style={{ fontFamily: SPRING_TYPE.display, fontSize: 18, fontWeight: 500, marginTop: 6, color: p.bark }}>Mediterranean rhythm</div>
+          </div>
+          <div>
+            <div style={{ fontSize: 10, color: p.stone, fontWeight: 700, letterSpacing: 0.6, textTransform: 'uppercase' }}>UI · Plus Jakarta Sans</div>
+            <div style={{ fontSize: 16, fontWeight: 600, marginTop: 6 }}>Today's energy · 700 left</div>
+            <div style={{ fontSize: 14, marginTop: 4, color: p.bark }}>Plenty of room for dinner — you're tracking gently.</div>
+            <div style={{ fontSize: 12, marginTop: 4, color: p.inkSoft }}>Score 84 · best this week</div>
+            <div style={{ fontSize: 11, marginTop: 8, fontWeight: 700, color: p.stone, letterSpacing: 0.6, textTransform: 'uppercase' }}>Wednesday · Bright morning</div>
+          </div>
+        </div>
+      );
+    }
+
+    function ComponentSheet() {
+      const p = resolveSpringPalette('light', { coral: '#EFA890', coralDeep: '#D8866A', coralSoft: '#FCE5D9' });
+      return (
+        <div style={{ background: p.cream, height: '100%', padding: 28, fontFamily: SPRING_TYPE.sans, color: p.espresso, overflow: 'auto' }}>
+          <div style={{ fontFamily: SPRING_TYPE.display, fontSize: 22, fontWeight: 500, marginBottom: 16 }}>Components</div>
+
+          <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: 0.6, textTransform: 'uppercase', color: p.stone, marginBottom: 8 }}>Buttons</div>
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 18 }}>
+            <SpringBtn palette={p}>Primary</SpringBtn>
+            <SpringBtn palette={p} variant="soft">Soft</SpringBtn>
+            <SpringBtn palette={p} variant="outline">Outline</SpringBtn>
+            <SpringBtn palette={p} variant="ghost">Ghost</SpringBtn>
+            <SpringBtn palette={p} disabled>Disabled</SpringBtn>
+          </div>
+
+          <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: 0.6, textTransform: 'uppercase', color: p.stone, marginBottom: 8 }}>Chips</div>
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 18 }}>
+            <AskAboutChip palette={p}/>
+            <span style={{ fontSize: 11, padding: '5px 12px', borderRadius: 12, background: p.sageSoft, color: p.sageDeep, fontWeight: 600 }}>vegetarian</span>
+            <span style={{ fontSize: 11, padding: '5px 12px', borderRadius: 12, background: p.coralSoft, color: p.coralDeep, fontWeight: 600 }}>high-protein</span>
+            <span style={{ fontSize: 11, padding: '5px 12px', borderRadius: 12, background: p.butterSoft, color: p.butterDeep, fontWeight: 600 }}>quick</span>
+          </div>
+
+          <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: 0.6, textTransform: 'uppercase', color: p.stone, marginBottom: 8 }}>Card</div>
+          <SpringCard palette={p} mode="light">
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+              <div style={{ width: 38, height: 38, borderRadius: 19, background: p.coralSoft, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <Icon name="leaf" size={18} color={p.coralDeep}/>
+              </div>
+              <div style={{ flex: 1 }}>
+                <div style={{ fontSize: 14, fontWeight: 600 }}>Soft surface</div>
+                <div style={{ fontSize: 12, color: p.inkSoft }}>Generous padding · 22 px radius · warm shadow</div>
+              </div>
+            </div>
+          </SpringCard>
+
+          <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: 0.6, textTransform: 'uppercase', color: p.stone, marginBottom: 8, marginTop: 18 }}>Chat bubbles</div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            <div style={{ alignSelf: 'flex-start', maxWidth: '80%', background: '#fff', padding: '12px 16px', borderRadius: '20px 20px 20px 6px', fontSize: 13, color: p.bark, border: `1px solid ${p.coralWhisper}` }}>
+              You're tracking gently this week — sleep is steadier.
+            </div>
+            <div style={{ alignSelf: 'flex-end', maxWidth: '80%', background: `linear-gradient(135deg, ${p.coral}, ${p.coralDeep})`, color: '#fff', padding: '12px 16px', borderRadius: '20px 20px 6px 20px', fontSize: 13 }}>
+              How am I tracking?
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+  </script>
+
+  <template id="__bundler_thumbnail">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200">
+      <rect width="200" height="200" fill="#FBF1EA"/>
+      <path d="M50 150c0-60 35-95 95-95 0 60-35 95-95 95z" fill="#EFA890" opacity="0.4"/>
+      <path d="M50 150c0-60 35-95 95-95 0 60-35 95-95 95z" stroke="#D8866A" stroke-width="4" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+      <path d="M50 150l65-65" stroke="#D8866A" stroke-width="4" stroke-linecap="round"/>
+    </svg>
+  </template>
+</body>
+</html>
