@@ -1,0 +1,200 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Spring — wellness companion</title>
+<style>
+  html, body { margin: 0; padding: 0; min-height: 100%; background: #ECE5DB; font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, system-ui, sans-serif; }
+  body { display: flex; align-items: center; justify-content: center; min-height: 100vh;
+    background: radial-gradient(ellipse 80% 60% at 50% 30%, #F4EEE5 0%, #E8DFD2 60%, #DBCEBC 100%);
+    background-attachment: fixed;
+    padding: 24px 16px;
+  }
+  body[data-mode="dark"] {
+    background: radial-gradient(ellipse 80% 60% at 50% 30%, #2A2017 0%, #1F1814 60%, #0F0B08 100%);
+  }
+  #root { display: flex; align-items: center; justify-content: center; }
+</style>
+</head>
+<body data-mode="light">
+  <div id="root"></div>
+
+  <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+
+  <script type="text/babel" src="spring-tokens.jsx"></script>
+  <script type="text/babel" src="spring-shell.jsx"></script>
+  <script type="text/babel" src="spring-onboarding.jsx"></script>
+  <script type="text/babel" src="spring-home.jsx"></script>
+  <script type="text/babel" src="spring-chat.jsx"></script>
+  <script type="text/babel" src="spring-meals.jsx"></script>
+  <script type="text/babel" src="tweaks-panel.jsx"></script>
+
+  <script type="text/babel">
+    const TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{
+      "primary": "soft-peach",
+      "mode": "light"
+    }/*EDITMODE-END*/;
+
+    const PRIMARY_OPTIONS = {
+      "soft-peach":   { coral: '#EFA890', coralDeep: '#D8866A', coralSoft: '#FCE5D9', label: 'Soft peach' },
+      "warm-coral":   { coral: '#EC8970', coralDeep: '#C76A50', coralSoft: '#FBDFD2', label: 'Warm coral' },
+      "petal-pink":   { coral: '#F2B8A2', coralDeep: '#D9947B', coralSoft: '#FDEBE0', label: 'Petal pink' },
+      "deep-coral":   { coral: '#E07856', coralDeep: '#B85A3E', coralSoft: '#F8D6C7', label: 'Deep coral' },
+    };
+
+    function App() {
+      const [tweak, setTweak] = useTweaks(TWEAK_DEFAULTS);
+      const mode = tweak.mode;
+      const palette = React.useMemo(() => {
+        const opt = PRIMARY_OPTIONS[tweak.primary] || PRIMARY_OPTIONS["soft-peach"];
+        return resolveSpringPalette(mode, mode === 'light' ? opt : null);
+      }, [tweak.primary, mode]);
+
+      // sync body bg to mode
+      React.useEffect(() => { document.body.dataset.mode = mode; }, [mode]);
+
+      const [route, setRoute] = React.useState('home'); // 'onboarding' | 'home' | 'meals' | 'train' | 'sleep' | 'chat'
+      const [onbStep, setOnbStep] = React.useState(0);
+      const [onbData, setOnbData] = React.useState({});
+      const [chatPrefill, setChatPrefill] = React.useState('');
+
+      const onChat = (prefill = '') => { setChatPrefill(prefill); setRoute('chat'); };
+
+      const handleNav = (id) => {
+        if (id === 'chat') { onChat(); }
+        else setRoute(id);
+      };
+
+      const renderScreen = () => {
+        if (route === 'onboarding') {
+          return <OnboardingScreen palette={palette} mode={mode}
+            step={onbStep} data={onbData}
+            onChange={(k, v) => setOnbData(d => ({ ...d, [k]: v }))}
+            onNext={() => setOnbStep(s => Math.min(ONBOARDING_STEPS.length - 1, s + 1))}
+            onBack={() => setOnbStep(s => Math.max(0, s - 1))}
+            onFinish={() => { setRoute('home'); setOnbStep(0); }}
+          />;
+        }
+        if (route === 'home') return <HomeScreen palette={palette} mode={mode} openContext={onChat}/>;
+        if (route === 'meals') return <MealPlanScreen palette={palette} mode={mode} openContext={onChat}/>;
+        if (route === 'train') return <ActiveWorkoutScreen palette={palette} mode={mode}/>;
+        if (route === 'sleep') return <PlaceholderScreen palette={palette} mode={mode} title="Sleep & Wellness" subtitle="Trends, hydration, supplements" icon="moon" tint={palette.sageSoft} tintDeep={palette.sageDeep}/>;
+        if (route === 'chat') return <ChatScreen palette={palette} mode={mode} prefilled={chatPrefill} onClear={() => { setChatPrefill(''); setRoute('home'); }}/>;
+        return null;
+      };
+
+      const showNav = route !== 'onboarding' && route !== 'chat';
+      const showFab = route !== 'onboarding' && route !== 'chat';
+
+      return (
+        <div className="spring-app" style={{ display: 'flex', alignItems: 'center', gap: 24, flexWrap: 'wrap', justifyContent: 'center' }}>
+          <SpringPhone palette={palette} mode={mode} floating>
+            <SpringStatusBar palette={palette} mode={mode}/>
+            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', position: 'relative' }}>
+              {renderScreen()}
+              {showFab && <AskSpringFab palette={palette} mode={mode} onClick={() => onChat()} bottom={88} />}
+            </div>
+            {showNav && <SpringBottomNav palette={palette} mode={mode} active={route} onChange={handleNav}/>}
+            <SpringHomeIndicator palette={palette} mode={mode}/>
+          </SpringPhone>
+
+          {/* Side controls — visible until tweaks panel is opened */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12, alignItems: 'flex-start', minWidth: 200 }}>
+            <ScreenJump route={route} setRoute={setRoute} setOnbStep={setOnbStep} palette={palette} mode={mode}/>
+          </div>
+
+          <TweaksPanel title="Tweaks">
+            <TweakSection label="Primary color"/>
+            <TweakColor label="Primary" value={tweak.primary}
+              options={['soft-peach','warm-coral','petal-pink','deep-coral'].map(k => PRIMARY_OPTIONS[k].coral)}
+              onChange={(c) => {
+                const key = Object.keys(PRIMARY_OPTIONS).find(k => PRIMARY_OPTIONS[k].coral === c) || 'soft-peach';
+                setTweak('primary', key);
+              }}/>
+            <TweakSection label="Appearance"/>
+            <TweakRadio label="Mode" value={tweak.mode}
+              options={['light','dark']}
+              onChange={(v) => setTweak('mode', v)}/>
+          </TweaksPanel>
+        </div>
+      );
+    }
+
+    // Side jump panel — replaces what would be a tab bar in production
+    function ScreenJump({ route, setRoute, setOnbStep, palette, mode }) {
+      const links = [
+        { id: 'onboarding', label: 'Onboarding · Welcome', step: 0 },
+        { id: 'onboarding', label: 'Onboarding · Name',    step: 1 },
+        { id: 'onboarding', label: 'Onboarding · Goal',    step: 2 },
+        { id: 'onboarding', label: 'Onboarding · Rhythm',  step: 3 },
+        { id: 'onboarding', label: 'Onboarding · Summary', step: 4 },
+        { id: 'home',  label: 'Home / Today' },
+        { id: 'meals', label: 'Meal Plan' },
+        { id: 'train', label: 'Active Workout' },
+        { id: 'chat',  label: 'Ask Spring (chat)' },
+      ];
+      const isDark = document.body.dataset.mode === 'dark';
+      return (
+        <div style={{
+          background: isDark ? 'rgba(40,30,22,0.85)' : 'rgba(255,255,255,0.7)',
+          backdropFilter: 'blur(10px)',
+          border: `1px solid ${isDark ? 'rgba(255,220,200,0.1)' : 'rgba(120,80,50,0.15)'}`,
+          borderRadius: 16, padding: 14,
+          fontFamily: '"Plus Jakarta Sans", system-ui, sans-serif',
+        }}>
+          <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: 1.2, textTransform: 'uppercase', color: isDark ? '#B8A89A' : '#7A6B5C', marginBottom: 8 }}>Jump to screen</div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+            {links.map((l, i) => {
+              const active = route === l.id && (l.step === undefined || l.step === undefined);
+              return (
+                <button key={i} onClick={() => { setRoute(l.id); if (l.step !== undefined) setOnbStep(l.step); }}
+                  style={{
+                    textAlign: 'left', padding: '6px 8px', borderRadius: 8, border: 'none',
+                    background: 'transparent', color: isDark ? '#E8DDD0' : '#3A2E25',
+                    fontSize: 12, fontWeight: 500, cursor: 'pointer',
+                  }}
+                  onMouseEnter={(e) => e.currentTarget.style.background = isDark ? 'rgba(232,168,144,0.12)' : 'rgba(216,134,106,0.1)'}
+                  onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}>
+                  {l.label}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      );
+    }
+
+    function PlaceholderScreen({ palette, mode, title, subtitle, icon, tint, tintDeep }) {
+      return (
+        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', padding: '14px 22px' }}>
+          <div style={{ fontFamily: SPRING_TYPE.sans, fontSize: 11, fontWeight: 600, letterSpacing: 0.6, textTransform: 'uppercase', color: tintDeep }}>{title}</div>
+          <div style={{ fontFamily: SPRING_TYPE.display, fontSize: 26, fontWeight: 500, color: palette.espresso, letterSpacing: -0.3, marginTop: 4 }}>{subtitle}</div>
+          <div style={{ marginTop: 28, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', flex: 1, gap: 16 }}>
+            <div style={{ width: 68, height: 68, borderRadius: 34, background: tint, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <Icon name={icon} size={32} color={tintDeep}/>
+            </div>
+            <div style={{ fontFamily: SPRING_TYPE.sans, fontSize: 13, color: palette.inkSoft, textAlign: 'center', maxWidth: 240, lineHeight: 1.5 }}>
+              Sleep summary, hydration trends, and supplement insights live here.
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+  </script>
+
+  <template id="__bundler_thumbnail">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200">
+      <rect width="200" height="200" fill="#FBF1EA"/>
+      <path d="M50 150c0-60 35-95 95-95 0 60-35 95-95 95z" fill="#EFA890" opacity="0.4"/>
+      <path d="M50 150c0-60 35-95 95-95 0 60-35 95-95 95z" stroke="#D8866A" stroke-width="4" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+      <path d="M50 150l65-65" stroke="#D8866A" stroke-width="4" stroke-linecap="round"/>
+      <circle cx="125" cy="65" r="6" fill="#6E8E73"/>
+    </svg>
+  </template>
+</body>
+</html>
