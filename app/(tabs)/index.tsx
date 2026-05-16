@@ -1,6 +1,7 @@
 import { ScrollView, Text, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import Animated, { FadeInDown } from 'react-native-reanimated';
 import { Hero } from '../../components/home/Hero';
 import { EnergyCard } from '../../components/home/EnergyCard';
 import { HydrationTracker } from '../../components/home/HydrationTracker';
@@ -18,7 +19,7 @@ export default function Today() {
   const mealTotals = useMealTotals(userId);
 
   return (
-    <SafeAreaView edges={['top']} className="flex-1 bg-cream">
+    <SafeAreaView edges={['top']} className="flex-1 bg-cream" testID="today-screen">
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ paddingBottom: 80 }}
@@ -40,19 +41,30 @@ export default function Today() {
         </View>
 
         <View style={{ paddingHorizontal: 18, gap: 14 }}>
-          <EnergyCard profile={profile.data ?? null} totals={mealTotals.data} />
-          <PlannedCards />
-          <HydrationTracker userId={userId} />
+          <Animated.View entering={FadeInDown.duration(420)}>
+            <EnergyCard profile={profile.data ?? null} totals={mealTotals.data} />
+          </Animated.View>
+          <Animated.View entering={FadeInDown.duration(420).delay(60)}>
+            <PlannedCards />
+          </Animated.View>
+          <Animated.View entering={FadeInDown.duration(420).delay(120)}>
+            <HydrationTracker userId={userId} />
+          </Animated.View>
 
-          <View style={{ paddingHorizontal: 4, marginTop: 4 }}>
+          <Animated.View
+            entering={FadeInDown.duration(420).delay(180)}
+            style={{ paddingHorizontal: 4, marginTop: 4 }}
+          >
             <Text
               className="text-espresso"
               style={{ fontFamily: 'Fraunces_500Medium', fontSize: 18 }}
             >
               Supplements
             </Text>
-          </View>
-          <SupplementList userId={userId} />
+          </Animated.View>
+          <Animated.View entering={FadeInDown.duration(420).delay(220)}>
+            <SupplementList userId={userId} />
+          </Animated.View>
         </View>
       </ScrollView>
     </SafeAreaView>

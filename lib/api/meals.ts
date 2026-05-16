@@ -98,6 +98,43 @@ export async function unlogMeal(userId: string, logId: string): Promise<void> {
   if (error) throw error;
 }
 
+export type SwapInput = {
+  food_name: string;
+  kcal: number;
+  protein_g: number;
+  carbs_g: number;
+  fat_g: number;
+  tags: string[];
+};
+
+/**
+ * Replaces a meal plan's food/macros/tags in place. Slot and scheduled_time
+ * stay put — only the food and its macros change. Used by the meal-swap flow
+ * after the user accepts the AI's suggestion.
+ */
+export async function applyMealSwap(
+  userId: string,
+  planId: string,
+  swap: SwapInput,
+): Promise<MealPlan> {
+  const { data, error } = await supabase
+    .from('meal_plans')
+    .update({
+      food_name: swap.food_name,
+      kcal: swap.kcal,
+      protein_g: swap.protein_g,
+      carbs_g: swap.carbs_g,
+      fat_g: swap.fat_g,
+      tags: swap.tags,
+    })
+    .eq('user_id', userId)
+    .eq('id', planId)
+    .select('*')
+    .single();
+  if (error) throw error;
+  return data;
+}
+
 /**
  * Sum macros from `meal_logs` for the date. Carbs + fat are derived by joining
  * to `meal_plans` (the schema only stores kcal + protein on the log). Freeform

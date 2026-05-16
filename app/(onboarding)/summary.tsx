@@ -241,6 +241,10 @@ export default function OnboardingSummary() {
 
         <View style={{ paddingHorizontal: 24, paddingBottom: 24 }}>
           <Pressable
+            testID="onboarding-finish"
+            accessibilityRole="button"
+            accessibilityLabel="Take me home"
+            accessibilityState={{ busy: upsert.isPending, disabled: upsert.isPending }}
             onPress={upsert.isPending ? undefined : onFinish}
             disabled={upsert.isPending}
             className={`flex-row items-center justify-center rounded-full h-14 bg-coral ${upsert.isPending ? 'opacity-60' : 'active:opacity-80'}`}

@@ -6,7 +6,9 @@ This directory holds Spring's Supabase project config, migrations, and Edge Func
 
 - `config.toml` — local-dev project config (port assignments, auth settings, function flags).
 - `migrations/` — SQL migrations applied in order. `0001_initial.sql` creates the full v1 schema + RLS policies.
-- `functions/chat/` — Edge Function for AI chat (wired in M4).
+- `functions/_shared/` — Auth, rate-limit, NIM client, and context-builder shared between Edge Functions.
+- `functions/chat/` — Streaming chat Edge Function (NIM via OpenAI SDK → SSE).
+- `functions/meal-swap/` — Meal-swap suggestion Edge Function (NIM JSON).
 
 ## First-time setup
 

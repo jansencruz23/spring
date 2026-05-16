@@ -32,3 +32,6 @@ enable_confirmations = false
 
 [functions.chat]
 verify_jwt = true
+
+[functions.meal-swap]
+verify_jwt = true

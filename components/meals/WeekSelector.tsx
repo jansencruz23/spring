@@ -37,6 +37,10 @@ export function WeekSelector({ selectedDate, onSelect, weekReference = new Date(
         return (
           <Pressable
             key={iso}
+            testID={`week-day-${iso}`}
+            accessibilityRole="button"
+            accessibilityLabel={`${initial} the ${day}${isToday ? ', today' : ''}`}
+            accessibilityState={{ selected }}
             onPress={() => onSelect(iso)}
             style={{
               flex: 1,

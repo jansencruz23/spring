@@ -88,6 +88,10 @@ export function OnbStep({
 
       <View style={{ paddingHorizontal: 24, paddingBottom: 8 }}>
         <Pressable
+          testID="onboarding-continue"
+          accessibilityRole="button"
+          accessibilityLabel={ctaLabel}
+          accessibilityState={{ disabled: !!disabled }}
           onPress={disabled ? undefined : onContinue}
           disabled={disabled}
           className={`flex-row items-center justify-center rounded-full h-14 bg-coral ${disabled ? 'opacity-40' : 'active:opacity-80'}`}

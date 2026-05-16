@@ -173,6 +173,10 @@ export function RestTimer({ endsAt, totalMs, onAddTime, onSkip, message }: Props
 
         <View className="flex-row" style={{ gap: 8, marginTop: 14 }}>
           <Pressable
+            testID="rest-add-15s"
+            accessibilityRole="button"
+            accessibilityLabel="Add 15 seconds to rest timer"
+            accessibilityState={{ disabled: !isResting }}
             onPress={onAddTime}
             disabled={!isResting}
             style={{
@@ -196,6 +200,10 @@ export function RestTimer({ endsAt, totalMs, onAddTime, onSkip, message }: Props
             </Text>
           </Pressable>
           <Pressable
+            testID="rest-skip"
+            accessibilityRole="button"
+            accessibilityLabel="Skip rest"
+            accessibilityState={{ disabled: !isResting }}
             onPress={onSkip}
             disabled={!isResting}
             style={{

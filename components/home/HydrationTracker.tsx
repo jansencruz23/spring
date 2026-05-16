@@ -25,7 +25,10 @@ export function HydrationTracker({ userId }: Props) {
   };
 
   return (
-    <SpringCard padding="l">
+    <SpringCard
+      padding="l"
+      accessibilityLabel={`Hydration. ${cups} of ${GOAL_CUPS} cups logged today.`}
+    >
       <View className="flex-row items-center justify-between" style={{ marginBottom: 12 }}>
         <View className="flex-row items-center" style={{ gap: 10 }}>
           <View
@@ -48,8 +51,14 @@ export function HydrationTracker({ userId }: Props) {
           </View>
         </View>
         <Pressable
+          testID="hydration-plus"
+          accessibilityRole="button"
+          accessibilityLabel="Log one cup of water"
+          accessibilityState={{ disabled: !userId || cups >= MAX_CUPS }}
+          accessibilityHint={cups >= MAX_CUPS ? 'Daily goal reached' : undefined}
           onPress={increment}
           disabled={!userId || cups >= MAX_CUPS}
+          hitSlop={8}
           style={{
             width: 36,
             height: 36,

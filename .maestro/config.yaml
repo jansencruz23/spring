@@ -1,0 +1,12 @@
+appId: com.spring.app
+---
+# Maestro project config for Spring.
+# Run a single flow:
+#   maestro test .maestro/onboarding.yaml
+# Run the suite:
+#   maestro test .maestro
+#
+# Notes:
+# - `appId` matches `expo.ios.bundleIdentifier` / `expo.android.package` in app.json.
+# - These flows assume a fresh install (clearState at the top of each one).
+# - Tags let CI pick a subset, e.g. `maestro test --include-tags=smoke .maestro`.
