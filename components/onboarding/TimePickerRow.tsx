@@ -3,6 +3,7 @@ import {
   FlatList,
   Modal,
   Pressable,
+  StyleSheet,
   Text,
   View,
   type NativeScrollEvent,
@@ -111,12 +112,16 @@ function TimePickerModal({ open, value, label, onClose, onConfirm }: ModalProps)
 
   return (
     <Modal visible={open} transparent animationType="fade" onRequestClose={onClose}>
-      <Pressable
-        onPress={onClose}
-        style={{ flex: 1, backgroundColor: 'rgba(58,46,37,0.4)', justifyContent: 'flex-end' }}
-      >
+      <View style={{ flex: 1, justifyContent: 'flex-end' }}>
+        {/* Backdrop: absolutely-positioned Pressable so it doesn't sit in the
+            modal-body's touch-responder chain. Wrapping the body in a Pressable
+            (the previous shape) makes Pressable claim the responder and the
+            wheel FlatLists below it never receive scroll gestures. */}
         <Pressable
-          onPress={() => {}}
+          onPress={onClose}
+          style={[StyleSheet.absoluteFillObject, { backgroundColor: 'rgba(58,46,37,0.4)' }]}
+        />
+        <View
           style={{
             backgroundColor: mode === 'dark' ? palette.ivory : '#FFFFFF',
             borderTopLeftRadius: 28,
@@ -204,8 +209,8 @@ function TimePickerModal({ open, value, label, onClose, onConfirm }: ModalProps)
               <Text className="font-sans-semibold text-cream">Set time</Text>
             </Pressable>
           </View>
-        </Pressable>
-      </Pressable>
+        </View>
+      </View>
     </Modal>
   );
 }

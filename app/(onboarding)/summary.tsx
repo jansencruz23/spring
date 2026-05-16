@@ -47,8 +47,12 @@ export default function OnboardingSummary() {
       }
       resetDraft();
       router.replace('/(tabs)');
-    } catch {
-      // Mutation error is surfaced via `upsert.isError` below — stay on screen.
+    } catch (e) {
+      // Mutation error is surfaced via `upsert.error` below — stay on screen.
+      // Logging it as well so it shows up in Metro for debugging schema /
+      // RLS / network issues that the toast doesn't capture in full.
+      // eslint-disable-next-line no-console
+      console.warn('[onboarding] profile upsert failed:', e);
     }
   };
 
@@ -224,9 +228,14 @@ export default function OnboardingSummary() {
           </Animated.View>
 
           {upsert.isError ? (
-            <Text className="font-sans text-danger text-xs" style={{ marginTop: 12 }}>
-              Couldn't save just now — check your connection and tap again.
-            </Text>
+            <View style={{ marginTop: 12, gap: 4 }}>
+              <Text className="font-sans-semibold text-danger text-xs">
+                Couldn't save just now.
+              </Text>
+              <Text className="font-sans text-danger text-xs" style={{ lineHeight: 16 }}>
+                {formatUpsertError(upsert.error)}
+              </Text>
+            </View>
           ) : null}
         </View>
 
@@ -259,4 +268,26 @@ function formatHourLabel(hhmm: string): string {
   const period = hh >= 12 ? 'pm' : 'am';
   const display = ((hh + 11) % 12) + 1;
   return `${display}:${String(mm).padStart(2, '0')} ${period}`;
+}
+
+/**
+ * Supabase / postgrest returns plain `{ message, code, details, hint }` objects,
+ * not Error instances — so `String(err)` yields "[object Object]". Pull out the
+ * useful fields, fall back to JSON for anything else.
+ */
+function formatUpsertError(err: unknown): string {
+  if (err instanceof Error) return err.message;
+  if (err && typeof err === 'object') {
+    const o = err as Record<string, unknown>;
+    const msg = typeof o.message === 'string' ? o.message : '';
+    const code = typeof o.code === 'string' ? ` [${o.code}]` : '';
+    const hint = typeof o.hint === 'string' && o.hint ? ` — ${o.hint}` : '';
+    if (msg) return `${msg}${code}${hint}`;
+    try {
+      return JSON.stringify(err);
+    } catch {
+      return '(unknown error)';
+    }
+  }
+  return String(err);
 }
