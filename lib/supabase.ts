@@ -6,9 +6,12 @@ import type { Database } from './database.types';
 const SUPABASE_URL = process.env.EXPO_PUBLIC_SUPABASE_URL;
 const SUPABASE_ANON_KEY = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY;
 
-if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
+export const isSupabaseConfigured = !!(SUPABASE_URL && SUPABASE_ANON_KEY);
+
+if (!isSupabaseConfigured) {
   // Surfaces a clear error at app boot if .env is missing — better than a
-  // silent network failure later.
+  // silent network failure later. The auth gate uses `isSupabaseConfigured`
+  // to skip session checks in this mode so the UI still boots for demos.
   // eslint-disable-next-line no-console
   console.warn(
     '[supabase] EXPO_PUBLIC_SUPABASE_URL or EXPO_PUBLIC_SUPABASE_ANON_KEY missing — see M0-WIRING.md',

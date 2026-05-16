@@ -1,15 +1,60 @@
-import { View } from 'react-native';
-import { Body, Heading } from '../../components/primitives/Heading';
-import { Screen } from '../../components/primitives/Screen';
+import { ScrollView, Text, View } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { Hero } from '../../components/home/Hero';
+import { EnergyCard } from '../../components/home/EnergyCard';
+import { HydrationTracker } from '../../components/home/HydrationTracker';
+import { SupplementList } from '../../components/home/SupplementList';
+import { PlannedCards } from '../../components/home/PlannedCards';
+import { useSession } from '../../lib/auth';
+import { useMealTotals, useProfile } from '../../lib/api/hooks';
+import { useTheme } from '../../lib/theme';
 
 export default function Today() {
+  const { palette } = useTheme();
+  const { session } = useSession();
+  const userId = session?.user.id;
+  const profile = useProfile(userId);
+  const mealTotals = useMealTotals(userId);
+
   return (
-    <Screen scroll>
-      <View className="pt-6 gap-2">
-        <Heading level="eyebrow">Today</Heading>
-        <Heading level="display">Good morning</Heading>
-        <Body className="mt-2">Energy ring, macro bars, hydration, supplements — wired in M1.</Body>
-      </View>
-    </Screen>
+    <SafeAreaView edges={['top']} className="flex-1 bg-cream">
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={{ paddingBottom: 80 }}
+      >
+        <View style={{ position: 'relative' }}>
+          <LinearGradient
+            colors={[palette.coralWhisper, palette.cream]}
+            start={{ x: 0.5, y: 0 }}
+            end={{ x: 0.5, y: 1 }}
+            style={{
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+            }}
+          />
+          <Hero name={profile.data?.name ?? ''} />
+        </View>
+
+        <View style={{ paddingHorizontal: 18, gap: 14 }}>
+          <EnergyCard profile={profile.data ?? null} totals={mealTotals.data} />
+          <PlannedCards />
+          <HydrationTracker userId={userId} />
+
+          <View style={{ paddingHorizontal: 4, marginTop: 4 }}>
+            <Text
+              className="text-espresso"
+              style={{ fontFamily: 'Fraunces_500Medium', fontSize: 18 }}
+            >
+              Supplements
+            </Text>
+          </View>
+          <SupplementList userId={userId} />
+        </View>
+      </ScrollView>
+    </SafeAreaView>
   );
 }
