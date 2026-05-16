@@ -1,55 +1,103 @@
-import { Text, View } from 'react-native';
+import { useEffect, useState } from 'react';
+import { Pressable, Text, View } from 'react-native';
+import { useRouter } from 'expo-router';
 import { ChevronRight, Dumbbell, Moon } from 'lucide-react-native';
 import { SpringCard } from '../primitives/SpringCard';
 import { useTheme } from '../../lib/theme';
+import { useSession } from '../../lib/auth';
+import { useActiveWorkoutSession, useWorkoutSets } from '../../lib/api/hooks';
+import { DEFAULT_ROUTINE, TOTAL_TARGET_SETS } from '../../lib/workouts/routine';
+
+function formatElapsed(totalSec: number): string {
+  const m = Math.floor(totalSec / 60);
+  const s = totalSec % 60;
+  return `${m}:${String(s).padStart(2, '0')}`;
+}
 
 /**
  * Two side-by-side cards: "Today's workout" + "Last night's sleep".
- * M1 shows empty/placeholder copy — both data sources land in later milestones
- * (workouts in M3, sleep is post-v1 per the plan).
+ * Workout card mirrors active-session state — when a session is running it
+ * shows the live elapsed time + how many sets are done. Tapping any state
+ * routes to the Train tab. Sleep stays a v1-cut placeholder.
  */
 export function PlannedCards() {
   const { palette } = useTheme();
+  const router = useRouter();
+  const { session } = useSession();
+  const userId = session?.user.id;
+  const activeSession = useActiveWorkoutSession(userId);
+  const sets = useWorkoutSets(userId, activeSession.data?.id);
+
+  const [elapsedSec, setElapsedSec] = useState(0);
+  const live = !!activeSession.data;
+
+  useEffect(() => {
+    if (!activeSession.data) {
+      setElapsedSec(0);
+      return;
+    }
+    const started = new Date(activeSession.data.started_at).getTime();
+    const tick = () => setElapsedSec(Math.max(0, Math.floor((Date.now() - started) / 1000)));
+    tick();
+    const id = setInterval(tick, 1000);
+    return () => clearInterval(id);
+  }, [activeSession.data]);
+
+  const setsDone = sets.data?.length ?? 0;
+
   return (
     <View className="flex-row" style={{ gap: 12 }}>
-      <SpringCard padding="m" style={{ flex: 1 }}>
-        <View className="flex-row items-center" style={{ gap: 8, marginBottom: 8 }}>
-          <View
-            style={{
-              width: 28,
-              height: 28,
-              borderRadius: 14,
-              backgroundColor: palette.sageSoft,
-              alignItems: 'center',
-              justifyContent: 'center',
-            }}
-          >
-            <Dumbbell size={15} color={palette.sageDeep} />
+      <Pressable
+        onPress={() => router.push('/(tabs)/workout')}
+        style={{ flex: 1 }}
+      >
+        <SpringCard padding="m">
+          <View className="flex-row items-center" style={{ gap: 8, marginBottom: 8 }}>
+            <View
+              style={{
+                width: 28,
+                height: 28,
+                borderRadius: 14,
+                backgroundColor: live ? palette.coralSoft : palette.sageSoft,
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
+            >
+              <Dumbbell
+                size={15}
+                color={live ? palette.coralDeep : palette.sageDeep}
+              />
+            </View>
+            <Text
+              className="font-sans-semibold text-ink-soft"
+              style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: 0.5 }}
+            >
+              {live ? `Live · ${formatElapsed(elapsedSec)}` : 'Today'}
+            </Text>
           </View>
           <Text
-            className="font-sans-semibold text-ink-soft"
-            style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: 0.5 }}
+            className="text-espresso"
+            style={{ fontFamily: 'Fraunces_500Medium', fontSize: 18, lineHeight: 22 }}
           >
-            Today
+            {DEFAULT_ROUTINE.titleEmphasis}
+            {'\n'}
+            <Text style={{ color: live ? palette.coralDeep : palette.sageDeep }}>
+              {DEFAULT_ROUTINE.titleRest}
+            </Text>
           </Text>
-        </View>
-        <Text
-          className="text-espresso"
-          style={{ fontFamily: 'Fraunces_500Medium', fontSize: 18, lineHeight: 22 }}
-        >
-          Plan a session{'\n'}
-          <Text style={{ color: palette.sageDeep }}>in Train</Text>
-        </Text>
-        <Text className="font-sans text-ink-soft" style={{ fontSize: 11, marginTop: 8 }}>
-          Workouts arrive next milestone.
-        </Text>
-        <View
-          className="flex-row items-center justify-end"
-          style={{ marginTop: 12 }}
-        >
-          <ChevronRight size={16} color={palette.stone} />
-        </View>
-      </SpringCard>
+          <Text className="font-sans text-ink-soft" style={{ fontSize: 11, marginTop: 8 }}>
+            {live
+              ? `${setsDone} / ${TOTAL_TARGET_SETS} sets done`
+              : `${DEFAULT_ROUTINE.exercises.length} exercises · ~${Math.round(DEFAULT_ROUTINE.exercises.length * 7)} min`}
+          </Text>
+          <View
+            className="flex-row items-center justify-end"
+            style={{ marginTop: 12 }}
+          >
+            <ChevronRight size={16} color={palette.stone} />
+          </View>
+        </SpringCard>
+      </Pressable>
 
       <SpringCard padding="m" style={{ flex: 1 }}>
         <View className="flex-row items-center" style={{ gap: 8, marginBottom: 8 }}>

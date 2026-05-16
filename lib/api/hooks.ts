@@ -20,6 +20,16 @@ import {
   type MealLog,
   type MealPlan,
 } from './meals';
+import {
+  endSession,
+  getActiveSession,
+  getSessionSets,
+  logSet,
+  startSession,
+  type LogSetInput,
+  type WorkoutSession,
+  type WorkoutSet,
+} from './workouts';
 import { ensureWeekSeeded } from './seeds';
 import { isoToday } from '../util/time';
 import type { OnboardingDraftValid } from '../schemas/profile';
@@ -209,6 +219,97 @@ export function useToggleMealLog(userId: string | undefined, date: string) {
       // so only invalidate when the toggled date is today.
       if (date === today) {
         void qc.invalidateQueries({ queryKey: ['mealTotals', userId, today] });
+      }
+    },
+  });
+}
+
+export function useActiveWorkoutSession(userId: string | undefined) {
+  return useQuery({
+    queryKey: ['workoutActiveSession', userId],
+    queryFn: () => getActiveSession(userId!),
+    enabled: !!userId,
+    staleTime: 1000 * 60,
+  });
+}
+
+export function useWorkoutSets(userId: string | undefined, sessionId: string | undefined) {
+  return useQuery({
+    queryKey: ['workoutSets', userId, sessionId],
+    queryFn: () => getSessionSets(userId!, sessionId!),
+    enabled: !!userId && !!sessionId,
+    staleTime: 1000 * 30,
+  });
+}
+
+export function useStartWorkoutSession(userId: string | undefined) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (name: string) => {
+      if (!userId) throw new Error('no session');
+      return startSession(userId, name);
+    },
+    onSuccess: (session: WorkoutSession) => {
+      qc.setQueryData<WorkoutSession | null>(['workoutActiveSession', userId], session);
+      qc.setQueryData<WorkoutSet[]>(['workoutSets', userId, session.id], []);
+    },
+  });
+}
+
+export function useEndWorkoutSession(userId: string | undefined) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (sessionId: string) => {
+      if (!userId) throw new Error('no session');
+      return endSession(userId, sessionId);
+    },
+    onSuccess: () => {
+      qc.setQueryData<WorkoutSession | null>(['workoutActiveSession', userId], null);
+      void qc.invalidateQueries({ queryKey: ['workoutActiveSession', userId] });
+    },
+  });
+}
+
+/**
+ * Logs a single set against the active session. Optimistic — the set appears
+ * in the cached list instantly so the routine row updates without waiting for
+ * the round-trip. On failure the previous list is restored.
+ */
+export function useLogWorkoutSet(userId: string | undefined, sessionId: string | undefined) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (input: LogSetInput) => {
+      if (!userId) throw new Error('no session');
+      if (!sessionId) throw new Error('no active workout session');
+      return logSet(userId, sessionId, input);
+    },
+    onMutate: async (input) => {
+      if (!sessionId) return { previous: undefined };
+      await qc.cancelQueries({ queryKey: ['workoutSets', userId, sessionId] });
+      const previous = qc.getQueryData<WorkoutSet[]>(['workoutSets', userId, sessionId]);
+      const optimistic: WorkoutSet = {
+        id: `optimistic-${Date.now()}`,
+        user_id: userId ?? '',
+        session_id: sessionId,
+        exercise: input.exercise,
+        reps: input.reps,
+        weight_kg: input.weightKg,
+        completed_at: new Date().toISOString(),
+      };
+      qc.setQueryData<WorkoutSet[]>(
+        ['workoutSets', userId, sessionId],
+        [...(previous ?? []), optimistic],
+      );
+      return { previous };
+    },
+    onError: (_e, _vars, ctx) => {
+      if (sessionId && ctx?.previous) {
+        qc.setQueryData(['workoutSets', userId, sessionId], ctx.previous);
+      }
+    },
+    onSettled: () => {
+      if (sessionId) {
+        void qc.invalidateQueries({ queryKey: ['workoutSets', userId, sessionId] });
       }
     },
   });

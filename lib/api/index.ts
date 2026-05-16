@@ -8,3 +8,8 @@ export {
   type MealTotals,
 } from './meals';
 export { ensureWeekSeeded } from './seeds';
+export {
+  type WorkoutSession,
+  type WorkoutSet,
+  type LogSetInput,
+} from './workouts';
