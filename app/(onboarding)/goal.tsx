@@ -1,22 +1,41 @@
 import { router } from 'expo-router';
-import { Pressable, View } from 'react-native';
-import { Body, Heading } from '../../components/primitives/Heading';
-import { Screen } from '../../components/primitives/Screen';
+import { View } from 'react-native';
+import Animated, { FadeInDown } from 'react-native-reanimated';
+import { OnbStep } from '../../components/onboarding/OnbStep';
+import { GOAL_OPTIONS, GoalCard } from '../../components/onboarding/GoalCard';
+import { useOnboardingDraft } from '../../lib/store/onboardingDraft';
+
+const TOTAL = 5;
 
 export default function OnboardingGoal() {
+  const goal = useOnboardingDraft((s) => s.draft.goal);
+  const setField = useOnboardingDraft((s) => s.setField);
+
   return (
-    <Screen>
-      <View className="flex-1 justify-center gap-4">
-        <Heading level="eyebrow">Step 3 of 5</Heading>
-        <Heading level="display">What's drawing you here?</Heading>
-        <Body>(5 goal cards wired in M1.)</Body>
+    <OnbStep
+      step={2}
+      total={TOTAL}
+      title="What brings you to Spring?"
+      disabled={!goal}
+      onContinue={() => router.push('/(onboarding)/rhythm')}
+    >
+      <View style={{ gap: 10 }}>
+        {GOAL_OPTIONS.map((opt, i) => (
+          <Animated.View
+            key={opt.id}
+            entering={FadeInDown.duration(350).delay(100 + i * 50)}
+          >
+            <GoalCard
+              goal={opt.id}
+              label={opt.label}
+              sub={opt.sub}
+              Icon={opt.Icon}
+              selected={goal === opt.id}
+              onPress={() => setField('goal', opt.id)}
+            />
+          </Animated.View>
+        ))}
       </View>
-      <Pressable
-        onPress={() => router.push('/(onboarding)/rhythm')}
-        className="bg-coral rounded-full h-14 items-center justify-center mb-4 active:opacity-80"
-      >
-        <Body className="text-cream font-sans-semibold">Next</Body>
-      </Pressable>
-    </Screen>
+    </OnbStep>
   );
 }
