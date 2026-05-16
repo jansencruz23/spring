@@ -16,13 +16,13 @@ import {
 import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client';
 import { Stack, useRouter, useSegments } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
-import { useEffect, useState, type ReactNode } from 'react';
+import { useEffect, type ReactNode } from 'react';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { ThemeProvider } from '../lib/theme';
 import { queryClient, queryPersister } from '../lib/query';
 import { isSupabaseConfigured } from '../lib/supabase';
-import { signInAnonymously, useSession } from '../lib/auth';
+import { useSession } from '../lib/auth';
 import { readOnboardedFlag, useProfile } from '../lib/api';
 
 SplashScreen.preventAutoHideAsync().catch(() => {
@@ -34,21 +34,20 @@ function AuthGate({ children }: { children: ReactNode }) {
   const segments = useSegments();
   const { session, loading: sessionLoading } = useSession();
   const profileQuery = useProfile(session?.user.id);
-  const [signingIn, setSigningIn] = useState(false);
 
   useEffect(() => {
     if (!isSupabaseConfigured) return;
     if (sessionLoading) return;
 
+    const seg = segments[0];
+
+    // No session — user must choose sign-in / sign-up / guest before
+    // continuing. Anonymous sessions are now opt-in via the sign-in screen
+    // rather than auto-created at boot.
     if (!session) {
-      if (signingIn) return;
-      setSigningIn(true);
-      signInAnonymously()
-        .catch(() => {
-          // Leave session null — gate will idle. The /(auth)/sign-in screen
-          // gives the user a retry path.
-        })
-        .finally(() => setSigningIn(false));
+      if (seg !== '(auth)') {
+        router.replace('/(auth)/sign-in');
+      }
       return;
     }
 
@@ -56,7 +55,6 @@ function AuthGate({ children }: { children: ReactNode }) {
 
     const hasProfile = !!profileQuery.data && profileQuery.data.name.length > 0;
     const onboarded = hasProfile || readOnboardedFlag();
-    const seg = segments[0];
 
     if (!onboarded && seg !== '(onboarding)') {
       router.replace('/(onboarding)/welcome');
@@ -66,7 +64,6 @@ function AuthGate({ children }: { children: ReactNode }) {
   }, [
     sessionLoading,
     session,
-    signingIn,
     profileQuery.isLoading,
     profileQuery.data,
     segments,

@@ -12,7 +12,7 @@ type Props = {
 };
 
 export function SupplementList({ userId }: Props) {
-  const { palette } = useTheme();
+  const { mode, palette } = useTheme();
   const supplements = useSupplements(userId);
   const toggle = useToggleSupplement(userId);
 
@@ -43,12 +43,12 @@ export function SupplementList({ userId }: Props) {
                 width: 34,
                 height: 34,
                 borderRadius: 17,
-                backgroundColor: tintBg(s.tint, palette),
+                backgroundColor: tintBg(s.tint, palette, mode),
                 alignItems: 'center',
                 justifyContent: 'center',
               }}
             >
-              <Pill size={16} color={tintFg(s.tint, palette)} />
+              <Pill size={16} color={tintFg(s.tint, palette, mode)} />
             </View>
             <View className="flex-1">
               <Text
@@ -68,6 +68,8 @@ export function SupplementList({ userId }: Props) {
             <ToggleCheck
               taken={taken}
               disabled={!userId}
+              accessibilityLabel={`${s.name}, ${taken ? 'taken' : 'not taken'}`}
+              testID={`supplement-toggle-${s.id}`}
               onPress={() => userId && toggle.mutate({ name: s.id, taken: !taken })}
             />
           </View>
@@ -81,10 +83,14 @@ function ToggleCheck({
   taken,
   onPress,
   disabled,
+  accessibilityLabel,
+  testID,
 }: {
   taken: boolean;
   onPress: () => void;
   disabled?: boolean;
+  accessibilityLabel?: string;
+  testID?: string;
 }) {
   const { palette } = useTheme();
   const scale = useSharedValue(1);
@@ -102,7 +108,14 @@ function ToggleCheck({
   const animatedStyle = useAnimatedStyle(() => ({ transform: [{ scale: scale.value }] }));
 
   return (
-    <Pressable onPress={disabled ? undefined : onPress} hitSlop={8}>
+    <Pressable
+      onPress={disabled ? undefined : onPress}
+      hitSlop={8}
+      testID={testID}
+      accessibilityRole="checkbox"
+      accessibilityState={{ checked: taken, disabled: !!disabled }}
+      accessibilityLabel={accessibilityLabel}
+    >
       <Animated.View
         style={[
           {
@@ -125,20 +138,28 @@ function ToggleCheck({
   );
 }
 
-function tintBg(tint: Supplement['tint'], palette: { butterSoft: string; coralSoft: string; sageSoft: string }): string {
+function tintBg(
+  tint: Supplement['tint'],
+  palette: { butterSoft: string; coralSoft: string; sageSoft: string },
+  mode: 'light' | 'dark',
+): string {
   switch (tint) {
     case 'butter': return palette.butterSoft;
     case 'coral':  return palette.coralSoft;
     case 'sage':   return palette.sageSoft;
-    case 'plum':   return '#E5DDF0';
+    case 'plum':   return mode === 'dark' ? '#3D3759' : '#E5DDF0';
   }
 }
 
-function tintFg(tint: Supplement['tint'], palette: { butterDeep: string; coralDeep: string; sageDeep: string }): string {
+function tintFg(
+  tint: Supplement['tint'],
+  palette: { butterDeep: string; coralDeep: string; sageDeep: string },
+  mode: 'light' | 'dark',
+): string {
   switch (tint) {
     case 'butter': return palette.butterDeep;
     case 'coral':  return palette.coralDeep;
     case 'sage':   return palette.sageDeep;
-    case 'plum':   return '#7A6FA0';
+    case 'plum':   return mode === 'dark' ? '#C8B8E0' : '#7A6FA0';
   }
 }

@@ -23,7 +23,7 @@ type Props = {
   onPress: () => void;
 };
 
-export function GoalCard({ label, sub, Icon, selected, onPress }: Props) {
+export function GoalCard({ goal, label, sub, Icon, selected, onPress }: Props) {
   const { palette, mode } = useTheme();
   const bg = selected
     ? palette.coralSoft
@@ -38,6 +38,10 @@ export function GoalCard({ label, sub, Icon, selected, onPress }: Props) {
 
   return (
     <Pressable
+      testID={`goal-${goal}`}
+      accessibilityRole="radio"
+      accessibilityState={{ selected }}
+      accessibilityLabel={`${label}. ${sub}`}
       onPress={onPress}
       className="flex-row items-center rounded-card active:opacity-90"
       style={{

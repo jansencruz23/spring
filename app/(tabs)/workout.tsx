@@ -40,6 +40,9 @@ export default function Workout() {
   const [elapsedSec, setElapsedSec] = useState(0);
   const [paused, setPaused] = useState(false);
   const [restEndsAt, setRestEndsAt] = useState<number | null>(null);
+  // When the user pauses mid-rest, stash how much rest was left so the rest
+  // doesn't get burned by wall-clock time while paused. Cleared on resume.
+  const [pausedRestMs, setPausedRestMs] = useState<number | null>(null);
 
   const completedByExercise = useMemo(() => {
     const map = new Map<string, number>();
@@ -100,6 +103,7 @@ export default function Workout() {
     setElapsedSec(0);
     setPaused(false);
     setRestEndsAt(null);
+    setPausedRestMs(null);
     startMut.mutate(DEFAULT_ROUTINE.name);
   };
 
@@ -117,7 +121,31 @@ export default function Workout() {
     if (!sessionId) return;
     endMut.mutate(sessionId);
     setRestEndsAt(null);
+    setPausedRestMs(null);
     setPaused(false);
+  };
+
+  // Pause = capture remaining rest ms and clear restEndsAt so the wall-clock
+  // timeout in the rest effect can't fire.
+  // Resume = recompute restEndsAt from the captured ms.
+  const handleTogglePause = () => {
+    setPaused((wasPaused) => {
+      if (wasPaused) {
+        // resuming
+        if (pausedRestMs != null && pausedRestMs > 0) {
+          setRestEndsAt(Date.now() + pausedRestMs);
+        }
+        setPausedRestMs(null);
+        return false;
+      }
+      // pausing
+      if (restEndsAt != null) {
+        const remaining = restEndsAt - Date.now();
+        setPausedRestMs(remaining > 0 ? remaining : null);
+        setRestEndsAt(null);
+      }
+      return true;
+    });
   };
 
   const restMessage = currentExercise
@@ -160,7 +188,7 @@ export default function Workout() {
             currentExerciseIdx={currentExerciseIdx}
             totalCompleted={totalCompleted}
             paused={paused}
-            onTogglePause={() => setPaused((p) => !p)}
+            onTogglePause={handleTogglePause}
             onLogSet={handleLogSet}
             onEnd={handleEnd}
             logBusy={logSetMut.isPending}
@@ -382,6 +410,10 @@ function IdleLayout({
 
       <View style={{ marginTop: 18 }}>
         <Pressable
+          testID="workout-start"
+          accessibilityRole="button"
+          accessibilityLabel="Start workout session"
+          accessibilityState={{ disabled: disabled || starting, busy: starting }}
           onPress={disabled ? undefined : onStart}
           disabled={disabled || starting}
           style={{
@@ -485,7 +517,7 @@ function ActiveLayout({
   return (
     <View style={{ paddingHorizontal: 18, gap: 18 }}>
       <RestTimer
-        endsAt={paused ? null : restEndsAt}
+        endsAt={restEndsAt}
         totalMs={DEFAULT_ROUTINE.restSeconds * 1000}
         onAddTime={onAddRestTime}
         onSkip={onSkipRest}
@@ -544,6 +576,10 @@ function ActiveLayout({
 
       {allDone ? (
         <Pressable
+          testID="workout-end"
+          accessibilityRole="button"
+          accessibilityLabel="End workout session"
+          accessibilityState={{ busy: endBusy, disabled: endBusy }}
           onPress={endBusy ? undefined : onEnd}
           disabled={endBusy}
           style={{
@@ -588,6 +624,9 @@ function ActiveLayout({
       ) : (
         <View className="flex-row" style={{ gap: 10 }}>
           <Pressable
+            testID="workout-pause"
+            accessibilityRole="button"
+            accessibilityLabel={paused ? 'Resume workout session' : 'Pause workout session'}
             onPress={onTogglePause}
             style={{
               flex: 1,
@@ -618,6 +657,10 @@ function ActiveLayout({
             </Text>
           </Pressable>
           <Pressable
+            testID="workout-log-set"
+            accessibilityRole="button"
+            accessibilityLabel="Log set"
+            accessibilityState={{ disabled: paused || logBusy, busy: logBusy }}
             onPress={paused || logBusy ? undefined : onLogSet}
             disabled={paused || logBusy}
             style={{
@@ -668,6 +711,10 @@ function ActiveLayout({
 
       {allDone ? null : (
         <Pressable
+          testID="workout-end-early"
+          accessibilityRole="button"
+          accessibilityLabel="End session early"
+          accessibilityState={{ busy: endBusy, disabled: endBusy }}
           onPress={endBusy ? undefined : onEnd}
           disabled={endBusy}
           style={{ alignSelf: 'center', paddingVertical: 6 }}

@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import { Pressable, Text, View } from 'react-native';
-import { Check } from 'lucide-react-native';
+import { Check, RefreshCw } from 'lucide-react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import Animated, {
   useAnimatedStyle,
@@ -19,6 +19,7 @@ type Props = {
   logged: boolean;
   disabled?: boolean;
   onToggle: () => void;
+  onSwap?: () => void;
 };
 
 type SlotStyle = { label: string; hue: string; hueDeep: string; hueSoft: string };
@@ -48,7 +49,7 @@ function splitTimeLabel(scheduled: string | null): { value: string; period: stri
   return { value: value ?? hhmm, period: period ?? '' };
 }
 
-export function MealCard({ plan, logged, disabled, onToggle }: Props) {
+export function MealCard({ plan, logged, disabled, onToggle, onSwap }: Props) {
   const { palette } = useTheme();
   const s = slotStyle(plan.slot, palette);
   const time = splitTimeLabel(plan.scheduled_time);
@@ -153,12 +154,36 @@ export function MealCard({ plan, logged, disabled, onToggle }: Props) {
               ))}
             </View>
 
-            <LogToggle
-              logged={logged}
-              disabled={disabled}
-              onPress={onToggle}
-              palette={palette}
-            />
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+              {onSwap ? (
+                <Pressable
+                  onPress={disabled ? undefined : onSwap}
+                  disabled={disabled}
+                  hitSlop={8}
+                  accessibilityLabel="Ask Spring for an alternative"
+                  style={{
+                    width: 28,
+                    height: 28,
+                    borderRadius: 14,
+                    borderWidth: 1,
+                    borderColor: palette.coralWhisper,
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    opacity: disabled ? 0.5 : 1,
+                  }}
+                >
+                  <RefreshCw size={13} color={palette.inkSoft} strokeWidth={2} />
+                </Pressable>
+              ) : null}
+              <LogToggle
+                logged={logged}
+                disabled={disabled}
+                onPress={onToggle}
+                palette={palette}
+                accessibilityLabel={`${plan.food_name}, ${logged ? 'eaten' : 'not eaten'}`}
+                testID={`meal-log-${plan.slot}`}
+              />
+            </View>
           </View>
         </View>
       </View>
@@ -191,11 +216,15 @@ function LogToggle({
   onPress,
   disabled,
   palette,
+  accessibilityLabel,
+  testID,
 }: {
   logged: boolean;
   onPress: () => void;
   disabled?: boolean;
   palette: SpringPalette;
+  accessibilityLabel?: string;
+  testID?: string;
 }) {
   const scale = useSharedValue(1);
 
@@ -212,7 +241,14 @@ function LogToggle({
   const animatedStyle = useAnimatedStyle(() => ({ transform: [{ scale: scale.value }] }));
 
   return (
-    <Pressable onPress={disabled ? undefined : onPress} hitSlop={8}>
+    <Pressable
+      onPress={disabled ? undefined : onPress}
+      hitSlop={8}
+      testID={testID}
+      accessibilityRole="checkbox"
+      accessibilityState={{ checked: logged, disabled: !!disabled }}
+      accessibilityLabel={accessibilityLabel}
+    >
       <Animated.View
         style={[
           {

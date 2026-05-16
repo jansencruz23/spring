@@ -1,4 +1,4 @@
-import type { Session } from '@supabase/supabase-js';
+import type { Session, User } from '@supabase/supabase-js';
 import { useEffect } from 'react';
 import { create } from 'zustand';
 import { supabase } from '../supabase';
@@ -45,10 +45,57 @@ export function useSession() {
   return { session, loading };
 }
 
+/** Anonymous users carry `is_anonymous: true` on the JWT app_metadata. */
+export function isAnonymous(user: User | null | undefined): boolean {
+  if (!user) return false;
+  return user.is_anonymous === true;
+}
+
 export async function signInAnonymously() {
   const { data, error } = await supabase.auth.signInAnonymously();
   if (error) throw error;
   return data.session;
+}
+
+export async function signUpWithEmail(email: string, password: string) {
+  const { data, error } = await supabase.auth.signUp({ email, password });
+  if (error) throw error;
+  return data.session;
+}
+
+export async function signInWithEmail(email: string, password: string) {
+  const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+  if (error) throw error;
+  return data.session;
+}
+
+export async function requestPasswordReset(email: string) {
+  // The redirect deep-link is handled at the app level (spring://). The
+  // recovery screen is not implemented in v1 — users complete the reset on
+  // Supabase's hosted page. Wire `redirectTo` here when we add the in-app
+  // recovery flow.
+  const { error } = await supabase.auth.resetPasswordForEmail(email, {
+    redirectTo: 'spring://auth/reset-password',
+  });
+  if (error) throw error;
+}
+
+export async function updatePassword(password: string) {
+  const { data, error } = await supabase.auth.updateUser({ password });
+  if (error) throw error;
+  return data.user;
+}
+
+/**
+ * Converts the current anonymous session into a permanent account by attaching
+ * an email and password. Existing user_id (and all RLS-scoped data) is
+ * preserved. With `auth.email.enable_confirmations = false` in supabase
+ * config, the change takes effect immediately.
+ */
+export async function linkEmailPasswordToAnon(email: string, password: string) {
+  const { data, error } = await supabase.auth.updateUser({ email, password });
+  if (error) throw error;
+  return data.user;
 }
 
 export async function signOut() {

@@ -1,0 +1,46 @@
+appId: com.spring.app
+tags:
+  - smoke
+  - onboarding
+---
+# Full onboarding happy-path: welcome → name → goal → rhythm → summary → Today.
+# Anonymous Supabase sign-in is automatic via the AuthGate, so we land directly
+# on the welcome step on first launch.
+
+- clearState
+- launchApp
+
+# Welcome
+- assertVisible: "Welcome to"
+- tapOn: "Let's begin"
+
+# Name
+- assertVisible: "What should we call you?"
+- tapOn:
+    id: "onboarding-name-input"
+- inputText: "Maestro"
+- hideKeyboard
+- tapOn:
+    id: "onboarding-continue"
+
+# Goal
+- assertVisible: "What brings you to Spring?"
+- tapOn:
+    id: "goal-feel_good"
+- tapOn:
+    id: "onboarding-continue"
+
+# Rhythm — defaults are valid, just continue.
+- assertVisible: "When does your day begin?"
+- tapOn:
+    id: "onboarding-continue"
+
+# Summary
+- assertVisible: "Your fresh start"
+- tapOn:
+    id: "onboarding-finish"
+
+# Today screen renders
+- assertVisible:
+    id: "today-screen"
+- assertVisible: "Hydration"

@@ -12,6 +12,7 @@ import {
   type SupplementLog,
 } from './supplements';
 import {
+  applyMealSwap,
   getMealLogsForDate,
   getMealPlansForDate,
   getMealTotalsForDate,
@@ -19,6 +20,7 @@ import {
   unlogMeal,
   type MealLog,
   type MealPlan,
+  type SwapInput,
 } from './meals';
 import {
   endSession,
@@ -30,9 +32,17 @@ import {
   type WorkoutSession,
   type WorkoutSet,
 } from './workouts';
+import {
+  getLatestThread,
+  getMessages,
+  requestMealSwap,
+  type ChatMessage,
+  type ChatThread,
+} from './chat';
 import { ensureWeekSeeded } from './seeds';
 import { isoToday } from '../util/time';
 import type { OnboardingDraftValid } from '../schemas/profile';
+import type { MealSwapPlanInput, MealSwapSuggestion } from '../schemas/chat';
 import { storage } from '../storage';
 
 export const ONBOARDED_KEY = 'spring.onboarded';
@@ -312,6 +322,81 @@ export function useLogWorkoutSet(userId: string | undefined, sessionId: string |
         void qc.invalidateQueries({ queryKey: ['workoutSets', userId, sessionId] });
       }
     },
+  });
+}
+
+// ────────────────────────────────────────────────────────────────────────
+// Chat
+// ────────────────────────────────────────────────────────────────────────
+
+export function useChatThread(userId: string | undefined) {
+  return useQuery({
+    queryKey: ['chatThread', userId],
+    queryFn: () => getLatestThread(userId!),
+    enabled: !!userId,
+    staleTime: 1000 * 60,
+  });
+}
+
+export function useChatMessages(threadId: string | undefined | null) {
+  return useQuery({
+    queryKey: ['chatMessages', threadId],
+    queryFn: () => getMessages(threadId!),
+    enabled: !!threadId,
+    staleTime: 1000 * 30,
+  });
+}
+
+/**
+ * Optimistically apply a meal swap and update the cached meal-plan list.
+ * Invalidates meal totals when applying to today's plan so the Today screen
+ * macro bars reanimate.
+ */
+export function useApplyMealSwap(userId: string | undefined, date: string) {
+  const qc = useQueryClient();
+  const today = isoToday();
+
+  return useMutation({
+    mutationFn: ({ planId, swap }: { planId: string; swap: SwapInput }) => {
+      if (!userId) throw new Error('no session');
+      return applyMealSwap(userId, planId, swap);
+    },
+    onMutate: async ({ planId, swap }) => {
+      await qc.cancelQueries({ queryKey: ['mealPlans', userId, date] });
+      const previous = qc.getQueryData<MealPlan[]>(['mealPlans', userId, date]);
+      if (previous) {
+        const next = previous.map((p) =>
+          p.id === planId
+            ? {
+                ...p,
+                food_name: swap.food_name,
+                kcal: swap.kcal,
+                protein_g: swap.protein_g,
+                carbs_g: swap.carbs_g,
+                fat_g: swap.fat_g,
+                tags: swap.tags,
+              }
+            : p,
+        );
+        qc.setQueryData<MealPlan[]>(['mealPlans', userId, date], next);
+      }
+      return { previous };
+    },
+    onError: (_e, _vars, ctx) => {
+      if (ctx?.previous) qc.setQueryData(['mealPlans', userId, date], ctx.previous);
+    },
+    onSettled: () => {
+      void qc.invalidateQueries({ queryKey: ['mealPlans', userId, date] });
+      if (date === today) {
+        void qc.invalidateQueries({ queryKey: ['mealTotals', userId, today] });
+      }
+    },
+  });
+}
+
+export function useMealSwap() {
+  return useMutation<MealSwapSuggestion, Error, MealSwapPlanInput>({
+    mutationFn: (plan) => requestMealSwap(plan),
   });
 }
 

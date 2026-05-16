@@ -5,6 +5,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { ShoppingBasket } from 'lucide-react-native';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { MealCard } from '../../components/meals/MealCard';
+import { SwapSheet } from '../../components/meals/SwapSheet';
 import { WeekSelector } from '../../components/meals/WeekSelector';
 import { useSession } from '../../lib/auth';
 import {
@@ -15,6 +16,7 @@ import {
 } from '../../lib/api/hooks';
 import { isoToday } from '../../lib/util/time';
 import { useTheme } from '../../lib/theme';
+import type { MealPlan } from '../../lib/api';
 
 export default function Meals() {
   const { palette, mode } = useTheme();
@@ -22,6 +24,7 @@ export default function Meals() {
   const userId = session?.user.id;
 
   const [selectedDate, setSelectedDate] = useState<string>(isoToday());
+  const [swapTarget, setSwapTarget] = useState<MealPlan | null>(null);
 
   // Seed once per week — fire on every mount, idempotent server-side.
   useEnsureWeekSeeded(userId);
@@ -129,6 +132,7 @@ export default function Meals() {
                     logged={!!existing}
                     disabled={!userId || toggle.isPending}
                     onToggle={() => toggle.mutate({ plan, existing })}
+                    onSwap={() => setSwapTarget(plan)}
                   />
                 </Animated.View>
               );
@@ -185,6 +189,12 @@ export default function Meals() {
           ) : null}
         </View>
       </ScrollView>
+
+      <SwapSheet
+        plan={swapTarget}
+        date={selectedDate}
+        onClose={() => setSwapTarget(null)}
+      />
     </SafeAreaView>
   );
 }

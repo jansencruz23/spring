@@ -1,0 +1,26 @@
+appId: com.spring.app
+tags:
+  - chat
+---
+# Smoke-tests the chat surface: composer, suggested chips, optimistic user
+# bubble. Doesn't assert on the streamed assistant reply because that requires
+# a deployed /chat Edge Function + a live NVIDIA NIM key — when those are
+# absent the error banner renders instead, which is the intended behavior.
+
+- launchApp
+
+- tapOn: "Spring"
+- assertVisible: "Ask Spring"
+
+# Suggested chips appear in the empty state.
+- assertVisible: "How am I tracking this week?"
+
+# Pick a suggested prompt — avoids keyboard timing flakiness.
+- tapOn: "How am I tracking this week?"
+
+# User bubble lands immediately (optimistic).
+- assertVisible: "How am I tracking this week?"
+
+# Composer remains usable after sending.
+- assertVisible:
+    id: "chat-input"

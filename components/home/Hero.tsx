@@ -1,4 +1,5 @@
 import { Text, View } from 'react-native';
+import Animated, { FadeIn } from 'react-native-reanimated';
 import { Bell } from 'lucide-react-native';
 import { SpringWordmark } from '../primitives/SpringMark';
 import { useTheme } from '../../lib/theme';
@@ -53,29 +54,31 @@ export function Hero({ name }: Props) {
         </View>
       </View>
 
-      <Text
-        className="font-sans-semibold text-coral-deep"
-        style={{
-          fontSize: 13,
-          letterSpacing: 0.4,
-          textTransform: 'uppercase',
-          marginBottom: 6,
-        }}
-      >
-        {eyebrow}
-      </Text>
-      <Text
-        className="text-espresso"
-        style={{
-          fontFamily: 'Fraunces_500Medium',
-          fontSize: 30,
-          letterSpacing: -0.4,
-          lineHeight: 34,
-        }}
-      >
-        {greeting},{'\n'}
-        <Text style={{ fontStyle: 'italic', color: palette.coralDeep }}>{display}.</Text>
-      </Text>
+      <Animated.View entering={FadeIn.duration(420)}>
+        <Text
+          className="font-sans-semibold text-coral-deep"
+          style={{
+            fontSize: 13,
+            letterSpacing: 0.4,
+            textTransform: 'uppercase',
+            marginBottom: 6,
+          }}
+        >
+          {eyebrow}
+        </Text>
+        <Text
+          className="text-espresso"
+          style={{
+            fontFamily: 'Fraunces_500Medium',
+            fontSize: 30,
+            letterSpacing: -0.4,
+            lineHeight: 34,
+          }}
+        >
+          {greeting},{'\n'}
+          <Text style={{ fontStyle: 'italic', color: palette.coralDeep }}>{display}.</Text>
+        </Text>
+      </Animated.View>
     </View>
   );
 }

@@ -21,7 +21,7 @@ function formatElapsed(totalSec: number): string {
  * routes to the Train tab. Sleep stays a v1-cut placeholder.
  */
 export function PlannedCards() {
-  const { palette } = useTheme();
+  const { mode, palette } = useTheme();
   const router = useRouter();
   const { session } = useSession();
   const userId = session?.user.id;
@@ -30,6 +30,13 @@ export function PlannedCards() {
 
   const [elapsedSec, setElapsedSec] = useState(0);
   const live = !!activeSession.data;
+
+  // Sleep card uses a dedicated plum tint that isn't in the theme palette. Pick
+  // values that read on cream and on the warm-dark cream so the card still feels
+  // like "night" in both modes.
+  const sleepTileBg = mode === 'dark' ? '#5A4F7A' : '#3D3759';
+  const sleepIcon = mode === 'dark' ? '#F0EAFA' : '#E0DBF5';
+  const sleepAccent = mode === 'dark' ? '#C8B8E0' : '#7A6FA0';
 
   useEffect(() => {
     if (!activeSession.data) {
@@ -106,12 +113,12 @@ export function PlannedCards() {
               width: 28,
               height: 28,
               borderRadius: 14,
-              backgroundColor: '#3D3759',
+              backgroundColor: sleepTileBg,
               alignItems: 'center',
               justifyContent: 'center',
             }}
           >
-            <Moon size={15} color="#E0DBF5" />
+            <Moon size={15} color={sleepIcon} />
           </View>
           <Text
             className="font-sans-semibold text-ink-soft"
@@ -125,7 +132,7 @@ export function PlannedCards() {
           style={{ fontFamily: 'Fraunces_500Medium', fontSize: 18, lineHeight: 22 }}
         >
           No data yet{'\n'}
-          <Text style={{ color: '#7A6FA0' }}>tuned in soon</Text>
+          <Text style={{ color: sleepAccent }}>tuned in soon</Text>
         </Text>
         <Text className="font-sans text-ink-soft" style={{ fontSize: 11, marginTop: 8 }}>
           Sleep tracking lands post-v1.

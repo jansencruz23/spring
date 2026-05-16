@@ -26,6 +26,9 @@ export default function OnboardingName() {
 
       <View style={{ borderBottomColor: palette.coralDeep, borderBottomWidth: 2, paddingBottom: 8 }}>
         <TextInput
+          testID="onboarding-name-input"
+          accessibilityLabel="Your first name"
+          accessibilityHint="Used to greet you each morning"
           value={name}
           onChangeText={(v) => setField('name', v)}
           placeholder="Type your name"

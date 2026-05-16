@@ -10,17 +10,16 @@ import {
   TextInput,
   View,
 } from 'react-native';
-import { ArrowRight } from 'lucide-react-native';
+import { ArrowLeft, ArrowRight } from 'lucide-react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Field } from '../../components/primitives/Field';
 import { SpringMark } from '../../components/primitives/SpringMark';
-import { signInAnonymously, signInWithEmail } from '../../lib/auth';
-import { isSupabaseConfigured } from '../../lib/supabase';
-import { SignInSchema } from '../../lib/schemas/auth';
+import { signUpWithEmail } from '../../lib/auth';
+import { SignUpSchema } from '../../lib/schemas/auth';
 import { useTheme } from '../../lib/theme';
 import { formatAuthError } from './_error';
 
-export default function SignIn() {
+export default function SignUp() {
   const { palette } = useTheme();
   const passwordRef = useRef<TextInput>(null);
 
@@ -29,14 +28,13 @@ export default function SignIn() {
   const [fieldErrors, setFieldErrors] = useState<{ email?: string; password?: string }>({});
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
-  const [guestBusy, setGuestBusy] = useState(false);
 
   const onSubmit = async () => {
     if (busy) return;
     setSubmitError(null);
     setFieldErrors({});
 
-    const parsed = SignInSchema.safeParse({ email: email.trim(), password });
+    const parsed = SignUpSchema.safeParse({ email: email.trim(), password });
     if (!parsed.success) {
       const errs: { email?: string; password?: string } = {};
       for (const issue of parsed.error.issues) {
@@ -49,28 +47,23 @@ export default function SignIn() {
 
     setBusy(true);
     try {
-      await signInWithEmail(parsed.data.email, parsed.data.password);
-      // AuthGate will redirect to /(tabs) or /(onboarding) based on profile state.
+      const session = await signUpWithEmail(parsed.data.email, parsed.data.password);
+      if (session) {
+        // Email confirmation disabled in supabase config — user is signed in.
+        // AuthGate forwards them to onboarding.
+        router.replace('/(onboarding)/welcome');
+      } else {
+        // Email confirmation enabled — Supabase returned no session. Bounce
+        // back to sign-in with a notice.
+        router.replace({
+          pathname: '/(auth)/sign-in',
+          params: { notice: 'Check your inbox to confirm your email, then sign in.' },
+        });
+      }
     } catch (e) {
       setSubmitError(formatAuthError(e));
     } finally {
       setBusy(false);
-    }
-  };
-
-  const onGuest = async () => {
-    if (guestBusy) return;
-    setSubmitError(null);
-    setGuestBusy(true);
-    try {
-      if (isSupabaseConfigured) {
-        await signInAnonymously();
-      }
-      router.replace('/(onboarding)/welcome');
-    } catch (e) {
-      setSubmitError(formatAuthError(e));
-    } finally {
-      setGuestBusy(false);
     }
   };
 
@@ -84,7 +77,13 @@ export default function SignIn() {
           contentContainerStyle={{ flexGrow: 1, paddingHorizontal: 28, paddingBottom: 24 }}
           keyboardShouldPersistTaps="handled"
         >
-          <View className="items-center" style={{ paddingTop: 28, gap: 12 }}>
+          <View className="flex-row" style={{ paddingTop: 8 }}>
+            <Pressable onPress={() => router.back()} hitSlop={12} className="active:opacity-60">
+              <ArrowLeft size={22} color={palette.bark} />
+            </Pressable>
+          </View>
+
+          <View className="items-center" style={{ paddingTop: 16, gap: 12 }}>
             <SpringMark size={56} color={palette.coral} secondary={palette.sageDeep} />
             <Text
               className="text-espresso text-center"
@@ -95,11 +94,11 @@ export default function SignIn() {
                 lineHeight: 34,
               }}
             >
-              Welcome back to{' '}
+              Plant your{' '}
               <Text style={{ fontStyle: 'italic', color: palette.coralDeep }}>Spring</Text>
             </Text>
             <Text className="font-sans text-bark text-center" style={{ fontSize: 14, lineHeight: 20 }}>
-              Sign in to pick up where you left off.
+              Create an account to save your rhythm.
             </Text>
           </View>
 
@@ -124,26 +123,16 @@ export default function SignIn() {
               label="Password"
               value={password}
               onChangeText={setPassword}
-              placeholder="••••••••"
+              placeholder="At least 8 characters"
               secureTextEntry
               autoCapitalize="none"
-              autoComplete="password"
-              textContentType="password"
+              autoComplete="new-password"
+              textContentType="newPassword"
               returnKeyType="go"
               onSubmitEditing={onSubmit}
               error={fieldErrors.password}
               editable={!busy}
             />
-
-            <View className="flex-row justify-end">
-              <Link href="/(auth)/forgot-password" asChild>
-                <Pressable hitSlop={8}>
-                  <Text className="font-sans-semibold text-coral-deep" style={{ fontSize: 13 }}>
-                    Forgot password?
-                  </Text>
-                </Pressable>
-              </Link>
-            </View>
 
             {submitError ? (
               <Text className="font-sans text-danger text-center" style={{ fontSize: 13, lineHeight: 18 }}>
@@ -161,51 +150,21 @@ export default function SignIn() {
                 <ActivityIndicator color={palette.cream} />
               ) : (
                 <>
-                  <Text className="font-sans-semibold text-cream text-base">Sign in</Text>
+                  <Text className="font-sans-semibold text-cream text-base">Create account</Text>
                   <ArrowRight size={18} color={palette.cream} strokeWidth={2.2} />
                 </>
               )}
             </Pressable>
-
-            <View className="flex-row items-center" style={{ marginVertical: 6, gap: 12 }}>
-              <View style={{ flex: 1, height: 1, backgroundColor: palette.coralWhisper }} />
-              <Text className="font-sans text-stone" style={{ fontSize: 12 }}>or</Text>
-              <View style={{ flex: 1, height: 1, backgroundColor: palette.coralWhisper }} />
-            </View>
-
-            <Pressable
-              onPress={guestBusy ? undefined : onGuest}
-              disabled={guestBusy}
-              className="flex-row items-center justify-center rounded-full h-14 bg-ivory active:opacity-80"
-              style={{
-                gap: 8,
-                borderWidth: 1,
-                borderColor: palette.coralWhisper,
-                opacity: guestBusy ? 0.6 : 1,
-              }}
-            >
-              {guestBusy ? (
-                <ActivityIndicator color={palette.bark} />
-              ) : (
-                <Text className="font-sans-semibold text-bark text-base">Continue as guest</Text>
-              )}
-            </Pressable>
-
-            {!isSupabaseConfigured ? (
-              <Text className="font-sans text-stone text-center text-xs">
-                Demo mode — data won't be saved across launches. See M0-WIRING.md.
-              </Text>
-            ) : null}
           </View>
 
-          <View className="flex-row justify-center" style={{ marginTop: 28, gap: 6 }}>
+          <View className="flex-row justify-center" style={{ marginTop: 24, gap: 6 }}>
             <Text className="font-sans text-ink-soft" style={{ fontSize: 13 }}>
-              New here?
+              Already have one?
             </Text>
-            <Link href="/(auth)/sign-up" asChild>
+            <Link href="/(auth)/sign-in" asChild>
               <Pressable hitSlop={8}>
                 <Text className="font-sans-semibold text-coral-deep" style={{ fontSize: 13 }}>
-                  Create an account
+                  Sign in
                 </Text>
               </Pressable>
             </Link>

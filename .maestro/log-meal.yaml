@@ -1,0 +1,24 @@
+appId: com.spring.app
+tags:
+  - smoke
+  - meals
+---
+# Assumes the user has already onboarded. Run onboarding.yaml first, OR rely on
+# a CI-seeded test account. The flow opens Meals, taps today's breakfast log
+# checkbox, then re-taps to unlog so the run is idempotent.
+
+- launchApp
+
+# Bottom tab → Meals
+- tapOn: "Meals"
+- assertVisible: "This week"
+
+# Log breakfast (first slot in the seeded Mediterranean plan)
+- tapOn:
+    id: "meal-log-breakfast"
+- assertVisible:
+    text: "Logged"
+
+# Unlog so the run leaves the day clean for the next iteration.
+- tapOn:
+    id: "meal-log-breakfast"
