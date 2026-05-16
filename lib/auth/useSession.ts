@@ -36,7 +36,13 @@ export function useSession() {
   useEffect(() => {
     ensureSubscribed();
   }, []);
-  return useSessionStore((s) => ({ session: s.session, loading: s.loading }));
+  // Two atomic selectors instead of one returning a new object literal — that
+  // pattern triggers React's "getSnapshot should be cached" warning + an
+  // infinite render loop, because `{ session, loading }` is a fresh reference
+  // every call and Zustand compares snapshots by Object.is.
+  const session = useSessionStore((s) => s.session);
+  const loading = useSessionStore((s) => s.loading);
+  return { session, loading };
 }
 
 export async function signInAnonymously() {
