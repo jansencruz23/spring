@@ -11,7 +11,16 @@ import {
   type Supplement,
   type SupplementLog,
 } from './supplements';
-import { getMealTotalsForDate } from './meals';
+import {
+  getMealLogsForDate,
+  getMealPlansForDate,
+  getMealTotalsForDate,
+  logMealFromPlan,
+  unlogMeal,
+  type MealLog,
+  type MealPlan,
+} from './meals';
+import { ensureWeekSeeded } from './seeds';
 import { isoToday } from '../util/time';
 import type { OnboardingDraftValid } from '../schemas/profile';
 import { storage } from '../storage';
@@ -130,5 +139,101 @@ export function useMealTotals(userId: string | undefined, date = isoToday()) {
     queryFn: () => getMealTotalsForDate(userId!, date),
     enabled: !!userId,
     staleTime: 1000 * 30,
+  });
+}
+
+export function useMealPlans(userId: string | undefined, date: string) {
+  return useQuery({
+    queryKey: ['mealPlans', userId, date],
+    queryFn: () => getMealPlansForDate(userId!, date),
+    enabled: !!userId,
+    staleTime: 1000 * 60 * 5,
+  });
+}
+
+export function useMealLogs(userId: string | undefined, date: string) {
+  return useQuery({
+    queryKey: ['mealLogs', userId, date],
+    queryFn: () => getMealLogsForDate(userId!, date),
+    enabled: !!userId,
+    staleTime: 1000 * 30,
+  });
+}
+
+/**
+ * Toggles a planned meal as logged / unlogged. Optimistic — the UI reflects
+ * the new state instantly; on failure the previous map is restored. Always
+ * invalidates `mealTotals` so the Today screen's macro bars reanimate.
+ */
+export function useToggleMealLog(userId: string | undefined, date: string) {
+  const qc = useQueryClient();
+  const today = isoToday();
+
+  return useMutation({
+    mutationFn: async ({ plan, existing }: { plan: MealPlan; existing: MealLog | null }) => {
+      if (!userId) throw new Error('no session');
+      if (existing) {
+        await unlogMeal(userId, existing.id);
+        return { logged: null, planId: plan.id };
+      }
+      const log = await logMealFromPlan(userId, plan);
+      return { logged: log, planId: plan.id };
+    },
+    onMutate: async ({ plan, existing }) => {
+      await qc.cancelQueries({ queryKey: ['mealLogs', userId, date] });
+      const previous = qc.getQueryData<Map<string, MealLog>>(['mealLogs', userId, date]);
+      const next = new Map(previous ?? []);
+      if (existing) {
+        next.delete(plan.id);
+      } else {
+        next.set(plan.id, {
+          id: `optimistic-${plan.id}`,
+          user_id: userId ?? '',
+          meal_plan_id: plan.id,
+          freeform_name: null,
+          eaten_at: new Date().toISOString(),
+          kcal: plan.kcal,
+          protein_g: plan.protein_g,
+          created_at: new Date().toISOString(),
+        });
+      }
+      qc.setQueryData<Map<string, MealLog>>(['mealLogs', userId, date], next);
+      return { previous };
+    },
+    onError: (_e, _vars, ctx) => {
+      if (ctx?.previous) qc.setQueryData(['mealLogs', userId, date], ctx.previous);
+    },
+    onSettled: () => {
+      void qc.invalidateQueries({ queryKey: ['mealLogs', userId, date] });
+      // Logging happens "today" — the Today screen pulls today's totals only,
+      // so only invalidate when the toggled date is today.
+      if (date === today) {
+        void qc.invalidateQueries({ queryKey: ['mealTotals', userId, today] });
+      }
+    },
+  });
+}
+
+/**
+ * Fire-and-forget seed: if `meal_plans` is empty for this week, seed the
+ * Mediterranean rotation. Used as a backstop on the Meals tab so existing
+ * (pre-seed) users get content on first visit. Errors are silent — the empty
+ * state in the UI is acceptable if seeding fails.
+ */
+export function useEnsureWeekSeeded(userId: string | undefined, reference: Date = new Date()) {
+  const qc = useQueryClient();
+  return useQuery({
+    queryKey: ['ensureWeekSeeded', userId, isoToday(reference)],
+    queryFn: async () => {
+      if (!userId) return { seeded: false };
+      const result = await ensureWeekSeeded(userId, reference);
+      if (result.seeded) {
+        void qc.invalidateQueries({ queryKey: ['mealPlans', userId] });
+      }
+      return result;
+    },
+    enabled: !!userId,
+    staleTime: Infinity, // Once seeded for the week, don't retry.
+    retry: false,
   });
 }

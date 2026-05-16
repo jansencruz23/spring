@@ -52,3 +52,36 @@ export function greetingForHour(hour: number): 'Good morning' | 'Good afternoon'
   if (hour < 18) return 'Good afternoon';
   return 'Good evening';
 }
+
+/** Days of the week starting Monday — matches the prototype's `M T W T F S S` row. */
+export const WEEKDAY_INITIALS = ['M', 'T', 'W', 'T', 'F', 'S', 'S'] as const;
+
+/**
+ * Returns the Monday on or before `date`, with the time stripped to 00:00 local.
+ * Mirrors ISO 8601's Monday-as-start-of-week. JS `Date.getDay()` returns 0 for
+ * Sunday — we shift by 6 to fold Sunday into the previous Monday's row.
+ */
+export function startOfMondayWeek(date: Date = new Date()): Date {
+  const d = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+  const dow = d.getDay(); // 0 (Sun) – 6 (Sat)
+  const offset = (dow + 6) % 7; // 0 (Mon) – 6 (Sun)
+  d.setDate(d.getDate() - offset);
+  return d;
+}
+
+export function addDays(date: Date, days: number): Date {
+  const d = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+  d.setDate(d.getDate() + days);
+  return d;
+}
+
+/** Builds the 7 ISO date strings (Mon → Sun) for the week containing `date`. */
+export function weekDates(date: Date = new Date()): string[] {
+  const monday = startOfMondayWeek(date);
+  return Array.from({ length: 7 }, (_, i) => isoToday(addDays(monday, i)));
+}
+
+/** True if two ISO date strings refer to the same calendar day. */
+export function isSameIsoDate(a: string, b: string): boolean {
+  return a === b;
+}

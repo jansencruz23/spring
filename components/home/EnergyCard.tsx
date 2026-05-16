@@ -22,10 +22,11 @@ export function EnergyCard({ profile, totals }: Props) {
   const fatTarget = profile?.fat_g ?? 70;
 
   const proteinConsumed = totals?.protein_g ?? 0;
-  // Carbs and fat aren't logged yet in M1 (meal_logs only stores kcal + protein).
-  // Show zeros so the bars render but don't lie about state.
-  const carbsConsumed = 0;
-  const fatConsumed = 0;
+  // Carbs + fat are derived from the linked `meal_plans` row server-side (see
+  // `getMealTotalsForDate` join). Freeform logs without a plan contribute 0,
+  // which is fine — M2 only logs from planned meals.
+  const carbsConsumed = totals?.carbs_g ?? 0;
+  const fatConsumed = totals?.fat_g ?? 0;
 
   const subtitle =
     kcalConsumed === 0
