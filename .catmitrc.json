@@ -1,0 +1,4 @@
+{
+  "provider": "nvidia",
+  "model": "google/gemma-3n-e2b-it"
+}

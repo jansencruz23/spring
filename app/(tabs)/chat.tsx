@@ -279,21 +279,24 @@ export default function Chat() {
           ) : null}
         </ScrollView>
 
-        <SuggestedChips onPick={send} disabled={composerDisabled} />
-
         <View
           style={{
-            paddingHorizontal: 16,
-            paddingTop: 4,
+            paddingTop: 6,
             paddingBottom: Platform.OS === 'ios' ? 4 : 14,
+            backgroundColor: palette.cream,
+            borderTopWidth: 1,
+            borderTopColor: palette.coralWhisper,
           }}
         >
-          <Composer
-            value={input}
-            onChange={setInput}
-            onSubmit={() => send()}
-            disabled={composerDisabled}
-          />
+          <SuggestedChips onPick={send} disabled={composerDisabled} />
+          <View style={{ paddingHorizontal: 16, paddingTop: 2 }}>
+            <Composer
+              value={input}
+              onChange={setInput}
+              onSubmit={() => send()}
+              disabled={composerDisabled}
+            />
+          </View>
         </View>
       </KeyboardAvoidingView>
     </SafeAreaView>

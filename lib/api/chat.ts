@@ -1,8 +1,12 @@
 // Chat client. The Supabase JS `functions.invoke` helper doesn't expose a
 // streaming response, so we use `fetch` directly with the user's access token.
-// RN 0.74+ on Hermes supports `response.body.getReader()`, which we need to
-// stream SSE tokens from the /chat Edge Function.
+//
+// We import `fetch` from `expo/fetch` rather than using the global. React
+// Native's stock `fetch` is an XHR polyfill that always sets `response.body`
+// to null, so `getReader()` is unavailable — `expo/fetch` (Expo SDK 50+) is
+// a real WHATWG fetch that returns a streaming ReadableStream.
 
+import { fetch } from 'expo/fetch';
 import { supabase } from '../supabase';
 import type { Database } from '../database.types';
 import {
@@ -101,6 +105,19 @@ export async function streamChat(
       detail = (await response.text()).slice(0, 200);
     } catch {
       // ignore
+    }
+    // Supabase's Functions gateway returns 404 + `{"code":"NOT_FOUND",...}`
+    // when the function name exists in source but isn't deployed to the
+    // project. The raw response is opaque to most users — surface the actual
+    // fix instead so they don't have to chase down what NOT_FOUND means.
+    if (response.status === 404 && /NOT[_-]?FOUND/i.test(detail)) {
+      throw new ChatStreamError(
+        'Chat is offline — the /chat Edge Function isn\'t deployed yet. ' +
+          'Run `npm run supabase:deploy:chat` (or `supabase functions deploy chat`) ' +
+          'after linking the project, then set the NIM_API_KEY secret with ' +
+          '`supabase secrets set NIM_API_KEY=…`.',
+        404,
+      );
     }
     throw new ChatStreamError(
       `chat request failed: ${response.status} ${detail}`.trim(),
@@ -212,6 +229,13 @@ export async function requestMealSwap(plan: MealSwapPlanInput): Promise<MealSwap
 
   if (!response.ok) {
     const body = await response.text().catch(() => '');
+    if (response.status === 404 && /NOT[_-]?FOUND/i.test(body)) {
+      throw new ChatStreamError(
+        'Meal-swap is offline — the /meal-swap Edge Function isn\'t deployed yet. ' +
+          'Run `npm run supabase:deploy:meal-swap` (or `supabase functions deploy meal-swap`).',
+        404,
+      );
+    }
     throw new ChatStreamError(
       `meal-swap failed: ${response.status} ${body.slice(0, 200)}`.trim(),
       response.status,

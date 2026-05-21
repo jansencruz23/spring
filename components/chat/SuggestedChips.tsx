@@ -22,8 +22,8 @@ export function SuggestedChips({ onPick, disabled }: Props) {
       showsHorizontalScrollIndicator={false}
       keyboardShouldPersistTaps="handled"
       contentContainerStyle={{
-        paddingHorizontal: 14,
-        paddingVertical: 8,
+        paddingHorizontal: 16,
+        paddingBottom: 8,
         gap: 8,
       }}
     >
